@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+option csharp_namespace = "Slither.Proto";
+
+
+enum Moves
+{
+    Left = 0;
+    Right = 1;
+    Boost = 2;
+    BoostLeft = 3;
+    BoostRight = 4;
+    Wait = 5;
+}
+
+message Request {
+    bool Died = 1;
+    int64 TimeStamp = 2;
+    int32 Length = 3;
+    repeated float Image=4;
+}
+
+
+message Response {
+    Moves Action = 1;
+}
+
+message RewardRequest{
+    Request state = 1;
+    float reward = 2;
+}
+
+message Nothing{
+
+}
+
+// Service that takes in the environment state from the SlitherPlayer
+// And responds
+service SlitherTrainer {
+    // Based on the request, NextMove responds with the proper move response
+    // integer that maps to an Enum
+    rpc NextMove(Request) returns (Response);
+
+    rpc Reset(RewardRequest) returns (Nothing);
+
+    rpc Reward(RewardRequest) returns (Nothing);
+}

@@ -1,0 +1,49 @@
+{
+    // Use IntelliSense to find out which attributes exist for C# debugging
+    // Use hover for the description of the existing attributes
+    // For further information visit https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "aws-sam",
+            "request": "direct-invoke",
+            "name": "Slither:Slither::Slither.Runtime.SlitherPlayer::Run (dotnetcore3.1)",
+            "invokeTarget": {
+                "target": "code",
+                "projectRoot": "SlitherPlayer",
+                "lambdaHandler": "Slither::Slither.Runtime.SlitherPlayer::Run"
+            },
+            "lambda": {
+                "runtime": "dotnetcore3.1",
+                "payload": {},
+                "environmentVariables": {}
+            }
+        },
+        {
+            "name": "Python: Module",
+            "type": "python",
+            "request": "launch",
+            "module": "learning",
+            "args": [
+                "--serve"
+            ]
+        },
+        {
+            "name": ".NET Core Launch (console)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/SlitherPlayer/bin/Debug/netcoreapp3.1/Slither.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": ".NET Core Attach",
+            "type": "coreclr",
+            "request": "attach",
+            "processId": "${command:pickProcess}"
+        }
+    ]
+}
