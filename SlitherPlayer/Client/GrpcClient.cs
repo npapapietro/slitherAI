@@ -16,49 +16,44 @@ namespace Slither.Client
             this.client = new SlitherTrainer.SlitherTrainerClient(channel);
         }
 
-        public void SendReset()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void SendReset(float reward, IEnvironment state)
-        {
-            var resetRequest = new RewardRequest{
-                State = ToRequest(state),
-                Reward = reward
-            };
-            client.Reset(resetRequest);
-        }
-
-        public void SendReward(float reward, IEnvironment state)
-        {
-            var rewardRequest = new RewardRequest{
-                State = ToRequest(state),
-                Reward = reward
-            };
-            client.Reward(rewardRequest);
-            
-        }
-
         public Moves GetNextMove(IEnvironment environment)
         {
+            var request = new MoveRequest();
+            request.Image.Add(environment.ScreenState);
 
-            var request = ToRequest(environment);
             var response = client.NextMove(request);
 
             return response.Action;
         }
 
-        private Request ToRequest(IEnvironment environment)
+        public void SendReset(float score, int step, int run)
         {
-            var request = new Request
+            var request = new ResetRequest
             {
-                Died = environment.Dead,
-                TimeStamp = environment.TimeStamp,
-                Length = environment.Length
+                Score = score,
+                Step = step,
+                Run = run
             };
-            request.Image.Add(environment.ScreenState);
-            return request;
+
+            client.Reset(request);
+        }
+
+        public void SendResults(float reward, IEnvironment currentState, Moves nextMove, IEnvironment nextState)
+        {
+            var request = new RememberRequest{
+                Action = nextMove,
+                Reward = reward,
+                Died = reward < 0.0,
+            };
+            request.CurrentImage.Add(currentState.ScreenState);
+            request.NextImage.Add(nextState.ScreenState);
+
+            client.Remember(request);
+        }
+
+        public void StepUpdate(int step)
+        {
+            client.StepUpdate(new StepRequest{TotalStep = step});
         }
     }
 

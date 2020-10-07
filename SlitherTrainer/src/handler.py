@@ -18,11 +18,16 @@ class Service(SlitherTrainerServicer):
         super().__init__()
 
     def NextMove(self, request: Request, *args, **kwargs) -> Response:
-        image = np.array(request.Image)
-        print(image.shape)
-        # move = self.trainer.move(image)
+        state = {
+            "Died": request.Died,
+            "TimeStamp": request.TimeStamp,
+            "Lenght": request.Length,
+            "Image": np.array(request.Image)
+        }
 
-        return Response(Action=3)
+        action = self.trainer.move(state)
+
+        return Response(Action=action)
 
     def Reset(self, request: RewardRequest, *args, **kwargs) -> Nothing:
         self.trainer.reset(request.reward, request.state)

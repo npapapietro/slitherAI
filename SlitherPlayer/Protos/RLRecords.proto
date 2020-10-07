@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option csharp_namespace = "Slither.Proto";
 
-
+// Space movements available by the SlitherPlayer
 enum Moves
 {
     Left = 0;
@@ -13,35 +13,55 @@ enum Moves
     Wait = 5;
 }
 
-message Request {
-    bool Died = 1;
-    int64 TimeStamp = 2;
-    int32 Length = 3;
-    repeated float Image=4;
+// Request from SlitherPlayer to the SlitherTrainer
+// on which move to do
+message MoveRequest {
+    // Current state of the game as reported
+    // by an InceptionV3 featurized image (2048,)
+    repeated float Image=1;
 }
 
-
-message Response {
+message MoveResponse {
+    // Move reported from SlitherTrainer
     Moves Action = 1;
 }
 
-message RewardRequest{
-    Request state = 1;
-    float reward = 2;
+// A way to communicate the current states and rewards
+// for training
+message RememberRequest{
+    repeated float CurrentImage = 1;
+    repeated float NextImage = 2;
+    Moves Action = 3;
+    float Reward = 4;
+    bool Died = 5;
 }
 
-message Nothing{
-
+// Communicates to take a step to the Trainer
+message StepRequest{
+    int32 TotalStep=1;
 }
+
+// If the Player died, this message is sent to end the run
+// and restart
+message ResetRequest{
+    float Score = 1;
+    int32 Step = 2;
+    int32 Run = 3;
+}
+
+// Fill in message for a void rpc response
+message Nothing{}
 
 // Service that takes in the environment state from the SlitherPlayer
 // And responds
 service SlitherTrainer {
     // Based on the request, NextMove responds with the proper move response
     // integer that maps to an Enum
-    rpc NextMove(Request) returns (Response);
+    rpc NextMove(MoveRequest) returns (MoveResponse);
 
-    rpc Reset(RewardRequest) returns (Nothing);
+    rpc Remember(RememberRequest) returns (Nothing);
 
-    rpc Reward(RewardRequest) returns (Nothing);
+    rpc StepUpdate(StepRequest) returns (Nothing);
+
+    rpc Reset(ResetRequest) returns (Nothing);
 }

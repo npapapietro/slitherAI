@@ -17,17 +17,22 @@ class SlitherTrainerStub(object):
         """
         self.NextMove = channel.unary_unary(
                 '/SlitherTrainer/NextMove',
-                request_serializer=RLRecords__pb2.Request.SerializeToString,
-                response_deserializer=RLRecords__pb2.Response.FromString,
+                request_serializer=RLRecords__pb2.MoveRequest.SerializeToString,
+                response_deserializer=RLRecords__pb2.MoveResponse.FromString,
+                )
+        self.Remember = channel.unary_unary(
+                '/SlitherTrainer/Remember',
+                request_serializer=RLRecords__pb2.RememberRequest.SerializeToString,
+                response_deserializer=RLRecords__pb2.Nothing.FromString,
+                )
+        self.StepUpdate = channel.unary_unary(
+                '/SlitherTrainer/StepUpdate',
+                request_serializer=RLRecords__pb2.StepRequest.SerializeToString,
+                response_deserializer=RLRecords__pb2.Nothing.FromString,
                 )
         self.Reset = channel.unary_unary(
                 '/SlitherTrainer/Reset',
-                request_serializer=RLRecords__pb2.RewardRequest.SerializeToString,
-                response_deserializer=RLRecords__pb2.Nothing.FromString,
-                )
-        self.Reward = channel.unary_unary(
-                '/SlitherTrainer/Reward',
-                request_serializer=RLRecords__pb2.RewardRequest.SerializeToString,
+                request_serializer=RLRecords__pb2.ResetRequest.SerializeToString,
                 response_deserializer=RLRecords__pb2.Nothing.FromString,
                 )
 
@@ -45,13 +50,19 @@ class SlitherTrainerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def Reset(self, request, context):
+    def Remember(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def Reward(self, request, context):
+    def StepUpdate(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Reset(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -62,17 +73,22 @@ def add_SlitherTrainerServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'NextMove': grpc.unary_unary_rpc_method_handler(
                     servicer.NextMove,
-                    request_deserializer=RLRecords__pb2.Request.FromString,
-                    response_serializer=RLRecords__pb2.Response.SerializeToString,
+                    request_deserializer=RLRecords__pb2.MoveRequest.FromString,
+                    response_serializer=RLRecords__pb2.MoveResponse.SerializeToString,
+            ),
+            'Remember': grpc.unary_unary_rpc_method_handler(
+                    servicer.Remember,
+                    request_deserializer=RLRecords__pb2.RememberRequest.FromString,
+                    response_serializer=RLRecords__pb2.Nothing.SerializeToString,
+            ),
+            'StepUpdate': grpc.unary_unary_rpc_method_handler(
+                    servicer.StepUpdate,
+                    request_deserializer=RLRecords__pb2.StepRequest.FromString,
+                    response_serializer=RLRecords__pb2.Nothing.SerializeToString,
             ),
             'Reset': grpc.unary_unary_rpc_method_handler(
                     servicer.Reset,
-                    request_deserializer=RLRecords__pb2.RewardRequest.FromString,
-                    response_serializer=RLRecords__pb2.Nothing.SerializeToString,
-            ),
-            'Reward': grpc.unary_unary_rpc_method_handler(
-                    servicer.Reward,
-                    request_deserializer=RLRecords__pb2.RewardRequest.FromString,
+                    request_deserializer=RLRecords__pb2.ResetRequest.FromString,
                     response_serializer=RLRecords__pb2.Nothing.SerializeToString,
             ),
     }
@@ -99,8 +115,42 @@ class SlitherTrainer(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/SlitherTrainer/NextMove',
-            RLRecords__pb2.Request.SerializeToString,
-            RLRecords__pb2.Response.FromString,
+            RLRecords__pb2.MoveRequest.SerializeToString,
+            RLRecords__pb2.MoveResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def Remember(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/SlitherTrainer/Remember',
+            RLRecords__pb2.RememberRequest.SerializeToString,
+            RLRecords__pb2.Nothing.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def StepUpdate(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/SlitherTrainer/StepUpdate',
+            RLRecords__pb2.StepRequest.SerializeToString,
+            RLRecords__pb2.Nothing.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -116,24 +166,7 @@ class SlitherTrainer(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/SlitherTrainer/Reset',
-            RLRecords__pb2.RewardRequest.SerializeToString,
-            RLRecords__pb2.Nothing.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def Reward(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/SlitherTrainer/Reward',
-            RLRecords__pb2.RewardRequest.SerializeToString,
+            RLRecords__pb2.ResetRequest.SerializeToString,
             RLRecords__pb2.Nothing.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

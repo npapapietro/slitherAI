@@ -19,10 +19,6 @@ namespace Slither.Runtime
         private readonly IFeaturizer Model;
         private readonly IClient gRPCClient;
 
-        public int StepCount { get; private set; }
-
-        public int RunCount { get; private set; }
-
         public SlitherPlayer()
         {
 
@@ -37,8 +33,6 @@ namespace Slither.Runtime
             Driver = new ChromeDriver(options);
             gRPCClient = new GrpcClient(channel);
             Model = new Featurizer(PlayerConfig.ModelFile);
-            RunCount = 0;
-            StepCount = 0;
         }
 
         public SlitherPlayer(ChromeDriver driver, IClient client, IFeaturizer model)
@@ -46,8 +40,6 @@ namespace Slither.Runtime
             Driver = driver;
             gRPCClient = client;
             Model = model;
-            RunCount = 0;
-            StepCount = 0;
         }
 
         public IEnvironment CurrentState()
@@ -55,39 +47,54 @@ namespace Slither.Runtime
             return Driver.GetState(Model);
         }
 
-        private void MainLoop()
+        private int MainLoop()
         {
             WebDriverWait wait = new WebDriverWait(Driver, TimeSpan.FromSeconds(15));
             Driver.Navigate().GoToUrl("http://slither.io");
             wait.Until(driver => driver.FindPlayButton().Displayed);
 
             int total_step = 0;
+            int run = 0;
             while (true)
             {
-                RunCount++;
+
+                if (run >= PlayerConfig.RunLimit)
+                {
+                    return 0;
+                }
                 Reset();
 
-                IEnvironment currentState = CurrentState();
+                var currentState = CurrentState();
 
+                run++;
                 int step = 0;
                 int score = 0;
 
                 while (true)
                 {
+                    if (total_step >= PlayerConfig.StepLimit)
+                    {
+                        return 0;
+                    }
                     step++;
                     total_step++;
 
-                    var nextMove = ConvertToSlitherMove(gRPCClient.GetNextMove(currentState));
-                    var reward = Move(nextMove, ref currentState);
+                    var nextMove = gRPCClient.GetNextMove(currentState);                  
+                    var reward = Move(ConvertToSlitherMove(nextMove), currentState, out var nextState);
+
                     score += step;
+
+                    gRPCClient.SendResults(reward, currentState, nextMove, nextState);
+                    currentState = nextState;
+
+                    gRPCClient.StepUpdate(total_step);
 
                     if (reward < 0.0)
                     {
-                        Reset(reward, currentState);
+                        Reset(score, step, run);
                         break;
                     }
 
-                    gRPCClient.SendReward(reward, currentState);
                 }
             }
         }
@@ -108,14 +115,14 @@ namespace Slither.Runtime
             var fakeState = EnvironmentUtils.MockState();
             var moveResult = gRPCClient.GetNextMove(fakeState);
 
-            gRPCClient.SendReward(3.0f, fakeState);
+            // gRPCClient.SendReward(3.0f, fakeState);
 
-            gRPCClient.SendReset(3.0f, fakeState);
+            // gRPCClient.SendReset(3.0f, fakeState);
         }
 
-        public void Reset(float reward, IEnvironment currentState)
+        public void Reset(float score, int step, int run)
         {
-            gRPCClient.SendReset(reward, currentState);
+            gRPCClient.SendReset(score, step, run);
 
             var playButton = Driver.FindPlayButton();
             if (playButton.Displayed)
@@ -141,11 +148,11 @@ namespace Slither.Runtime
             }
         }
 
-        public float Move(Actions action, ref IEnvironment currentState)
+        public float Move(Actions action, IEnvironment currentState, out IEnvironment nextState)
         {
             action.Perform();
-            var nextState = CurrentState();
-            var reward = -1.0f;
+            nextState = CurrentState();
+            var reward = 1.0f;
 
             if (nextState.Dead)
             {
@@ -156,7 +163,7 @@ namespace Slither.Runtime
                 reward = 3.0f;
             }
 
-            currentState = nextState;
+            // currentState = nextState;
             return reward;
 
         }
@@ -184,11 +191,15 @@ namespace Slither.Runtime
                 case Moves.BoostRight:
                     return action.SendKeys(Keys.Space).SendKeys(Keys.ArrowRight);
                 case Moves.Wait:
-                    return null; // Should I return null??
+                    return action;
                 default:
                     throw new Exception("How did you get here??");
             }
         }
 
+        public float Move(Actions action, ref IEnvironment currentState)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

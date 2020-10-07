@@ -1,11 +1,4 @@
-﻿using System;
-using OpenCvSharp;
-using OpenQA.Selenium.Chrome;
-using Slither.Models;
-using Slither.ScreenCapture;
-using Grpc.Core;
-using Slither.Client;
-using Slither.Proto;
+﻿using OpenQA.Selenium.Chrome;
 using Slither.Runtime;
 
 namespace Slither
@@ -38,5 +31,9 @@ namespace Slither
         };
 
         public static bool TestgRPC = true;
+
+        public static int StepLimit = 5000000;
+
+        public static int RunLimit = int.MaxValue;
     }
 }

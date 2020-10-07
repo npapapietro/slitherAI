@@ -7,11 +7,7 @@ namespace Slither.Runtime
     {
         IEnvironment CurrentState();
 
-        int StepCount { get; }
-
-        int RunCount { get; }
-
-        void Reset(float reward, IEnvironment currentState);
+        void Reset(float score, int step, int run);
 
         void Reset();
 

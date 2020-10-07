@@ -7,10 +7,12 @@ namespace Slither.Client
 {
     public interface IClient
     {
-        void SendReset(float reward, IEnvironment state);
+        void SendReset(float score, int step, int run);
+
+        void StepUpdate(int step);
 
         Moves GetNextMove(IEnvironment environment);
 
-        void SendReward(float reward, IEnvironment state);
+        void SendResults(float reward, IEnvironment currentState, Moves nextMove, IEnvironment nextState);
     }
 }

@@ -43,13 +43,20 @@ class Trainer:
 
         self.epsilon = EXPLORATION_MAX
         self.steps = 0
+        self.memory = []
 
-    def move(self, state: np.array) -> Moves:
-        if state.shape[0] < WINDOW_SIZE:
+    def move(self, state: dict) -> Moves:
+
+        self.memory.append(state)
+
+        if len(self.memory) < WINDOW_SIZE:
             return Moves(random.randrange(self.movelist))
+            
         q_values = self.model.predict(
-            np.expand_dims(state, axis=0), batch_size=1)
+            np.expand_dims(self.memory[-1], axis=0), batch_size=1)
+
         self.steps += 1
+        
         return Moves(np.argmax(q_values[0]))
 
     def reset(self, reward, state):
