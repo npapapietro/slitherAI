@@ -1,6 +1,8 @@
 using System;
+using System.Collections.ObjectModel;
 using System.Linq;
 using OpenQA.Selenium;
+using OpenQA.Selenium.Support.UI;
 using Slither.Models;
 using Slither.Runtime;
 using Slither.ScreenCapture;
@@ -22,46 +24,50 @@ namespace Slither.Environment
         }
         public static IEnvironment GetState(this IWebDriver driver, IFeaturizer model)
         {
-            var length = driver.FindSlitherLength();
-            var playbuttonDisplayed = driver.FindPlayButton().Displayed;
-
-            var env = new Environment
-            {
-                TimeStamp = DateTime.UtcNow.ToEpoch(),
-                Length = length,
-                Dead = length < 0 || playbuttonDisplayed,
-                ScreenState = model.GetImage(driver.StreamScreen())
-            };
-
-            return env as IEnvironment;
-        }
-
-        public static int FindSlitherLength(this IWebDriver driver)
-        {
-            var lengthQry = By.XPath(@"//span[contains(.,'Your length')]/span[2]/text()");
             try
             {
-                return Convert.ToInt32(driver.FindElement(lengthQry).Text);
+                new WebDriverWait(driver, TimeSpan.FromSeconds(15))
+                    .Until(driver => driver.FindSlitherLength().Count > 0);
+
+                var lengthText = driver.FindSlitherLength().FirstOrDefault().Text;
+                var playbuttonDisplayed = driver.FindPlayButton().Displayed;
+
+                Int32.TryParse(lengthText, out var length);
+
+                return new Environment
+                {
+                    TimeStamp = DateTime.UtcNow.ToEpoch(),
+                    Length = Convert.ToInt32(length),
+                    Dead = Convert.ToInt32(length) <= 0 || playbuttonDisplayed,
+                    ScreenState = model.GetImage(driver.StreamScreen())
+                } as IEnvironment;
             }
-            catch (Exception e)
+            catch(StaleElementReferenceException)
             {
-                Console.WriteLine("Error getting length " + e.Message);
-                return -1;
+                return new Environment
+                {
+                    TimeStamp = DateTime.UtcNow.ToEpoch(),
+                    Length = 0,
+                    Dead = true,
+                    ScreenState = model.GetImage(driver.StreamScreen())
+                } as IEnvironment;
             }
+            catch(Exception e)
+            {
+                Console.WriteLine(e.Message);
+                throw;
+            }
+
+        }
+
+        public static ReadOnlyCollection<IWebElement> FindSlitherLength(this IWebDriver driver)
+        {     
+            return driver.FindElements(By.XPath(@"//*[contains(.,'Your length')]/span[2]"));         
         }
 
         public static IWebElement FindPlayButton(this IWebDriver driver)
         {
-            var buttonQry = By.XPath(@"//*[contains(text(),'Play')]");
-            try
-            {
-                return driver.FindElement(buttonQry);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Error getting playbutton " + e.Message);
-                return null;
-            }
+            return driver.FindElement(By.XPath(@"//*[contains(text(),'Play')]"));
         }
 
         public static int ToEpoch(this DateTime time)

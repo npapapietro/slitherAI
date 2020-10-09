@@ -13,7 +13,7 @@ namespace Slither.Runtime
 
         void Run();
 
-        float Move(Actions action, ref IEnvironment currentState);
+        float Move(Actions action, IEnvironment currentState, out IEnvironment nextState);
 
     }
 }

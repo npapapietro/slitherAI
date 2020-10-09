@@ -1,11 +1,15 @@
 import numpy as np
 from typing import List
+from grpc import ServicerContext
+
 
 from .game import Trainer
 from .proto import (
-    Response, 
-    Request, 
-    RewardRequest, 
+    MoveRequest, 
+    MoveResponse, 
+    RememberRequest,
+    StepRequest,
+    ResetRequest,
     Moves, 
     Nothing,
     SlitherTrainerServicer
@@ -16,23 +20,31 @@ class Service(SlitherTrainerServicer):
     def __init__(self):
         self.trainer = Trainer()
         super().__init__()
+        print("Ready")
 
-    def NextMove(self, request: Request, *args, **kwargs) -> Response:
-        state = {
-            "Died": request.Died,
-            "TimeStamp": request.TimeStamp,
-            "Lenght": request.Length,
-            "Image": np.array(request.Image)
-        }
+    def NextMove(self, request: MoveRequest, context: ServicerContext) -> MoveResponse:
+        img = np.array(request.Image)
+        move = self.trainer.move(img)
+        print("NextMove",move)
+        return MoveResponse(Action=Moves.Name(move))
 
-        action = self.trainer.move(state)
-
-        return Response(Action=action)
-
-    def Reset(self, request: RewardRequest, *args, **kwargs) -> Nothing:
-        self.trainer.reset(request.reward, request.state)
+    def Remember(self, request: RememberRequest, context: ServicerContext) -> Nothing:
+        self.trainer.remember(
+            request.CurrentImage, 
+            request.NextImage,
+            request.Action,
+            request.Reward,
+            request.Died
+        )
+        print("Remember")
         return Nothing()
-    
-    def Reward(self, request: RewardRequest, *args, **kwargs) -> Nothing:
-        self.trainer.reset(request.reward, request.state)
+
+    def StepUpdate(self, request: StepRequest, context: ServicerContext) -> Nothing:
+        print("Step", request.TotalStep)
+        self.trainer.step_update(request.TotalStep)
+        return Nothing()
+
+    def Reset(self, request: ResetRequest, context: ServicerContext) -> Nothing:
+        print("Reset")
+        self.trainer.reset(request.Score, request.Step, request.Run)
         return Nothing()

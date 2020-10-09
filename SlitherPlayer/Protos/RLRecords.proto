@@ -3,8 +3,7 @@ syntax = "proto3";
 option csharp_namespace = "Slither.Proto";
 
 // Space movements available by the SlitherPlayer
-enum Moves
-{
+enum Moves {
     Left = 0;
     Right = 1;
     Boost = 2;
@@ -18,7 +17,7 @@ enum Moves
 message MoveRequest {
     // Current state of the game as reported
     // by an InceptionV3 featurized image (2048,)
-    repeated float Image=1;
+    repeated float Image = 1;
 }
 
 message MoveResponse {
@@ -28,7 +27,7 @@ message MoveResponse {
 
 // A way to communicate the current states and rewards
 // for training
-message RememberRequest{
+message RememberRequest {
     repeated float CurrentImage = 1;
     repeated float NextImage = 2;
     Moves Action = 3;
@@ -37,20 +36,20 @@ message RememberRequest{
 }
 
 // Communicates to take a step to the Trainer
-message StepRequest{
-    int32 TotalStep=1;
+message StepRequest {
+    int32 TotalStep = 1;
 }
 
 // If the Player died, this message is sent to end the run
 // and restart
-message ResetRequest{
+message ResetRequest {
     float Score = 1;
     int32 Step = 2;
     int32 Run = 3;
 }
 
 // Fill in message for a void rpc response
-message Nothing{}
+message Nothing {}
 
 // Service that takes in the environment state from the SlitherPlayer
 // And responds
