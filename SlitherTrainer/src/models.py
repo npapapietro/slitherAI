@@ -10,7 +10,7 @@ from tensorflow.python.keras.layers.core import Flatten
 
 def export():
     K.set_image_data_format('channels_first')
-    model = ResNet50(include_top=False, weights='imagenet', input_shape=(3, 299, 299), pooling="max")
+    model = ResNet50(include_top=False, weights='imagenet', input_shape=(3, 299, 299), pooling="max") # (2048,)
     
     onnx_model = keras2onnx.convert_keras(model, model.name)
 

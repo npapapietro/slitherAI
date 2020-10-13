@@ -5,6 +5,7 @@ namespace Slither.Models
 {
     public interface IFeaturizer: IDisposable
     {
-        float[] GetImage(MemoryStream imgStream);
+        float[] GetImageFeatures(MemoryStream imgStream);
+        float[] GetImageFeatures();
     }
 }

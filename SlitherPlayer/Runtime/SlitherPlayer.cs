@@ -1,6 +1,5 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 using Grpc.Core;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
@@ -11,6 +10,7 @@ using Slither.Client;
 using Slither.Environment;
 using Slither.Models;
 using Slither.Proto;
+using Slither.ScreenCapture;
 
 namespace Slither.Runtime
 {
@@ -20,37 +20,54 @@ namespace Slither.Runtime
         private readonly IFeaturizer Model;
         private readonly IClient gRPCClient;
 
+        private readonly ScreenStream ImageStream;
+
         public SlitherPlayer()
         {
+            var useFF = false;
 
-            var options = new ChromeOptions();
-            // var options = new FirefoxOptions();
-            options.SetLoggingPreference(LogType.Client, LogLevel.Off);
-            
-            foreach (var opt in PlayerConfig.Options)
+
+            if (useFF)
             {
-                options.AddArgument(opt);
-            }
-            var channel = new Channel(PlayerConfig.Channel, ChannelCredentials.Insecure);
-            
+                var options = new FirefoxOptions();
+                options.SetLoggingPreference(LogType.Client, LogLevel.Off);
 
-            // Driver = new FirefoxDriver(options);
-            Driver = new ChromeDriver(options);
-            gRPCClient = new GrpcClient(channel);
+                foreach (var opt in PlayerConfig.Options)
+                {
+                    options.AddArgument(opt);
+                }
+
+                Driver = new FirefoxDriver(options);
+            }
+            else
+            {
+                var options = new ChromeOptions();
+                options.SetLoggingPreference(LogType.Client, LogLevel.Off);
+
+                foreach (var opt in PlayerConfig.Options)
+                {
+                    options.AddArgument(opt);
+                }
+
+                Driver = new ChromeDriver(options);
+            }
+
+            gRPCClient = new GrpcClient(new Channel(PlayerConfig.Channel, ChannelCredentials.Insecure));
             Model = new Featurizer(PlayerConfig.ModelFile);
+            ImageStream = new ScreenStream(Driver);
         }
 
-        public IEnvironment CurrentState()
+        public IEnvironment CurrentState(bool withWait = false)
         {
-            return Driver.GetState(Model);
+            return Driver.GetState(Model, withWait);
         }
 
         private int MainLoop()
         {
             WebDriverWait wait = new WebDriverWait(Driver, TimeSpan.FromSeconds(5));
             Driver.Navigate().GoToUrl("http://slither.io");
-            
 
+            ImageStream.Run();
             int total_step = 0;
             int run = 0;
             while (true)
@@ -59,24 +76,24 @@ namespace Slither.Runtime
                 if (run >= PlayerConfig.RunLimit) return 0;
 
                 try
-                {   
+                {
                     Console.WriteLine($"Entering game.");
-                    while(!wait.Until(driver => driver.FindPlayButton().Displayed)){}
+                    while (!wait.Until(driver => driver.FindPlayButton().Displayed)) { }
                     Reset();
                     Console.WriteLine($"Entering game.");
                 }
-                catch(ElementClickInterceptedException)
+                catch (ElementClickInterceptedException)
                 {
                     Console.WriteLine("Element Click intercepted, proceeding");
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
- 
+
                     Console.WriteLine("Can't find or click play button " + e.Message);
 
                 }
-               
-                var currentState = CurrentState();
+
+                var currentState = CurrentState(true);
 
                 run++;
                 int step = 0;
@@ -85,7 +102,8 @@ namespace Slither.Runtime
 
                 while (true)
                 {
-                    Console.WriteLine($"Step: {step}; Total Step {total_step}.");
+                    var stopWatch = System.Diagnostics.Stopwatch.StartNew();
+                    // Console.WriteLine($"Step: {step}; Total Step {total_step}.");
                     if (total_step >= PlayerConfig.StepLimit)
                     {
                         return 0;
@@ -94,40 +112,76 @@ namespace Slither.Runtime
                     total_step++;
 
                     var nextMove = gRPCClient.GetNextMove(currentState);
-                    Console.WriteLine($"Next move is {nextMove}.");
+                    // Console.WriteLine($"Next move is {nextMove}.");
 
                     var reward = Move(ConvertToSlitherMove(nextMove), currentState, out var nextState);
-                    Console.WriteLine($"Reward is {reward}.");
+                    // Console.WriteLine($"Reward is {reward}.");
                     score += step;
 
-                    // gRPCClient.SendResults(reward, currentState, nextMove, nextState);
+                    gRPCClient.SendResults(reward, currentState, nextMove, nextState);
                     currentState = nextState;
 
-                    // gRPCClient.StepUpdate(total_step);
+                    gRPCClient.StepUpdate(total_step);
 
                     if (reward < 0.0)
                     {
                         Console.WriteLine($"Died, sending results.");
-                        // Reset(score, step, run);
+                        Reset(score, step, run);
                         break;
                     }
+                    stopWatch.Stop();
+                    Console.WriteLine(String.Format("|{0,10}|{1,10}|{2,10}|{3,10}|{4,10}|", "Step", "Total Step", "Next Move", "Reward", "Elapsed Loop"));
+                    Console.WriteLine("--------------------------------------------------");
+                    Console.WriteLine(String.Format("|{0,10}|{1,10}|{2,10}|{3,10}|{4,10}|", step, total_step, nextMove, reward, stopWatch.Elapsed.Seconds));
                 }
             }
         }
 
         public void Run()
         {
+
+
+
             if (PlayerConfig.TestgRPC)
             {
                 TestConnection();
-                return;
+
             }
-            if (PlayerConfig.TestSelect)
+            else if (PlayerConfig.TestSelect)
             {
                 TestSelection();
-                return;
             }
-            MainLoop();
+            else if (PlayerConfig.TestScreen)
+            {
+                TestScreen();
+            }
+            else if (PlayerConfig.TestKeys)
+            {
+                TestKeys();
+            }
+            else
+            {
+                MainLoop();
+            }
+        }
+
+        private void TestScreen()
+        {
+            WebDriverWait wait = new WebDriverWait(Driver, TimeSpan.FromSeconds(15));
+            Driver.Navigate().GoToUrl("http://slither.io");
+            wait.Until(driver => driver.FindPlayButton().Displayed);
+            Driver.FindPlayButton().Click();
+            ImageStream.Run();
+            
+  
+            
+
+            while(Stopwatch.StartNew().ElapsedMilliseconds < 15*1000)
+            {
+                
+            }
+
+            Console.WriteLine(ImageStream.ScreenShots.Count);
         }
 
         private void TestSelection()
@@ -157,8 +211,9 @@ namespace Slither.Runtime
             gRPCClient.StepUpdate(1);
 
             gRPCClient.SendResults(0f, fakeState, Moves.Boost, fakeState);
-            
+
         }
+
 
         private void TestKeys()
         {
@@ -168,20 +223,20 @@ namespace Slither.Runtime
 
             Driver.FindPlayButton().Click();
 
-            while(true)
+            while (true)
             {
                 new OpenQA.Selenium.Interactions.Actions(Driver)
-                    .SendKeys(Keys.Left)
-                    .SendKeys(Keys.Left)
-                    .SendKeys(Keys.Left)
-                    .SendKeys(Keys.Left)
+                    .MoveByOffset(15,-20)
+                    .Perform();
+                new OpenQA.Selenium.Interactions.Actions(Driver)
+                    .MoveByOffset(-15,20)
                     .Perform();
             }
         }
 
         public void Reset(float score, int step, int run)
         {
-            gRPCClient.SendReset(score, step, run);           
+            gRPCClient.SendReset(score, step, run);
         }
 
         public void Reset()
@@ -201,7 +256,7 @@ namespace Slither.Runtime
         {
             action.Perform();
             nextState = CurrentState();
- 
+
             if (nextState.Dead)
             {
                 return -1.0f;
@@ -217,6 +272,7 @@ namespace Slither.Runtime
 
         public void Dispose()
         {
+            ImageStream.Dispose();
             Driver.Dispose();
             Model.Dispose();
         }
@@ -228,15 +284,30 @@ namespace Slither.Runtime
             switch (move)
             {
                 case Moves.Left:
-                    return action.SendKeys(Keys.Left);
+                    return action
+                        .SendKeys(Keys.Left)
+                        .SendKeys(Keys.Left)
+                        .SendKeys(Keys.Left);
                 case Moves.Right:
-                    return action.SendKeys(Keys.Right);
+                    return action
+                        .SendKeys(Keys.Right)
+                        .SendKeys(Keys.Right)
+                        .SendKeys(Keys.Right);
                 case Moves.Boost:
-                    return action.SendKeys(Keys.Space);
+                    return action
+                        .SendKeys(Keys.Space)
+                        .SendKeys(Keys.Space)
+                        .SendKeys(Keys.Space);
                 case Moves.BoostLeft:
-                    return action.SendKeys(Keys.Up).SendKeys(Keys.Left);
+                    return action
+                        .SendKeys(Keys.Up).SendKeys(Keys.Left)
+                        .SendKeys(Keys.Up).SendKeys(Keys.Left)
+                        .SendKeys(Keys.Up).SendKeys(Keys.Left);
                 case Moves.BoostRight:
-                    return action.SendKeys(Keys.Up).SendKeys(Keys.Right);
+                    return action
+                        .SendKeys(Keys.Up).SendKeys(Keys.Right)
+                        .SendKeys(Keys.Up).SendKeys(Keys.Right)
+                        .SendKeys(Keys.Up).SendKeys(Keys.Right);
                 case Moves.Wait:
                     return action;
                 default:

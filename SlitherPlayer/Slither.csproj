@@ -35,5 +35,7 @@
     <Content Include="Environment\Environment.cs" />
     <Content Include="Models\interfaces\IFeaturizer.cs" />
     <Content Include="Runtime\SlitherPlayer.cs" />
+    <Content Include="ScreenCapture\ScreenStream.cs" />
+    <Content Include="ScreenCapture\ScreenSelection.cs" />
   </ItemGroup>
 </Project>

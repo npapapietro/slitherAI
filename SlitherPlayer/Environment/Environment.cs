@@ -22,37 +22,42 @@ namespace Slither.Environment
             public int TimeStamp { get; set; }
 
         }
-        public static IEnvironment GetState(this IWebDriver driver, IFeaturizer model)
+        public static IEnvironment GetState(this IWebDriver driver, IFeaturizer model, bool withWait = false)
         {
             try
             {
-                new WebDriverWait(driver, TimeSpan.FromSeconds(15))
+                if (withWait)
+                {
+                    new WebDriverWait(driver, TimeSpan.FromSeconds(15))
                     .Until(driver => driver.FindSlitherLength().Count > 0);
+                }
+
 
                 var lengthText = driver.FindSlitherLength().FirstOrDefault().Text;
                 var playbuttonDisplayed = driver.FindPlayButton().Displayed;
-
                 Int32.TryParse(lengthText, out var length);
 
-                return new Environment
+                var state = new Environment
                 {
                     TimeStamp = DateTime.UtcNow.ToEpoch(),
                     Length = Convert.ToInt32(length),
                     Dead = Convert.ToInt32(length) <= 0 || playbuttonDisplayed,
-                    ScreenState = model.GetImage(driver.StreamScreen())
+                    ScreenState = model.GetImageFeatures()
                 } as IEnvironment;
+
+                return state;
             }
-            catch(StaleElementReferenceException)
+            catch (StaleElementReferenceException)
             {
                 return new Environment
                 {
                     TimeStamp = DateTime.UtcNow.ToEpoch(),
                     Length = 0,
                     Dead = true,
-                    ScreenState = model.GetImage(driver.StreamScreen())
+                    ScreenState = model.GetImageFeatures()
                 } as IEnvironment;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine(e.Message);
                 throw;
@@ -61,8 +66,8 @@ namespace Slither.Environment
         }
 
         public static ReadOnlyCollection<IWebElement> FindSlitherLength(this IWebDriver driver)
-        {     
-            return driver.FindElements(By.XPath(@"//*[contains(.,'Your length')]/span[2]"));         
+        {
+            return driver.FindElements(By.XPath(@"//*[contains(.,'Your length')]/span[2]"));
         }
 
         public static IWebElement FindPlayButton(this IWebDriver driver)
@@ -78,13 +83,13 @@ namespace Slither.Environment
 
         public static IEnvironment MockState()
         {
-            Random randNum = new Random();   
+            Random randNum = new Random();
             var fakeImage = Enumerable
                 .Repeat(0, 2048)
-                .Select(i => ((Single)randNum.Next(0,1000)) / 1000f)
+                .Select(i => ((Single)randNum.Next(0, 1000)) / 1000f)
                 .ToArray();
 
-            var testRequest = new Environment 
+            var testRequest = new Environment
             {
                 Dead = false,
                 TimeStamp = DateTime.UtcNow.ToEpoch(),
@@ -93,7 +98,7 @@ namespace Slither.Environment
             };
 
             return testRequest as IEnvironment;
-            
+
         }
 
     }

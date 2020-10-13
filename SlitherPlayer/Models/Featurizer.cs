@@ -22,7 +22,6 @@ namespace Slither.Models
 
         private Tensor<float> PreProcess(MemoryStream stream)
         {
-
             using Image<Rgb24> image = Image<Rgba32>.Load(stream, out var format).CloneAs<Rgb24>();
             using Stream imageStream = new MemoryStream();
             var paddedHeight = 299;
@@ -46,17 +45,45 @@ namespace Slither.Models
             }
             return input;
         }
-        public float[] GetImage(MemoryStream imgStream)
+        public float[] GetImageFeatures(MemoryStream imgStream)
         {
+            var stopWatch = System.Diagnostics.Stopwatch.StartNew();
             var input = PreProcess(imgStream);
 
             var inputs = new List<NamedOnnxValue>
             {
-                NamedOnnxValue.CreateFromTensor("input_1", input)
+                NamedOnnxValue.CreateFromTensor("input_1", input) // (3, 299, 299)
             };
 
-            using var results = Session.Run(inputs);
-            return results.First().AsTensor<float>().ToArray();
+            using var results = Session.Run(inputs); // (2048,)
+            var img = results.First().AsTensor<float>().ToArray();
+
+            stopWatch.Stop();
+
+            Console.WriteLine($"Image featurization took {stopWatch.ElapsedMilliseconds}");
+
+            return img;
+        }
+
+        public float[] GetImageFeatures()
+        {   
+            using MemoryStream imgStream = new MemoryStream();
+            var stopWatch = System.Diagnostics.Stopwatch.StartNew();
+            var input = PreProcess(imgStream);
+
+            var inputs = new List<NamedOnnxValue>
+            {
+                NamedOnnxValue.CreateFromTensor("input_1", input) // (3, 299, 299)
+            };
+
+            using var results = Session.Run(inputs); // (2048,)
+            var img = results.First().AsTensor<float>().ToArray();
+
+            stopWatch.Stop();
+
+            Console.WriteLine($"Image featurization took {stopWatch.ElapsedMilliseconds}");
+
+            return img;
         }
 
         public void Dispose()

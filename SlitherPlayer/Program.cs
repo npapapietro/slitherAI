@@ -1,6 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 using OpenQA.Selenium.Chrome;
 using Slither.Runtime;
+using Slither.ScreenCapture;
 
 namespace Slither
 {
@@ -9,7 +10,7 @@ namespace Slither
         static void Main(string[] args)
         {
     
-
+            
             using var runtime = new SlitherPlayer();
 
             runtime.Run();
@@ -36,5 +37,9 @@ namespace Slither
 
         public static int RunLimit = int.MaxValue;
         public static bool TestSelect = false;
+
+        public static bool TestScreen = true;
+
+        public static bool TestKeys = false;
     }
 }
