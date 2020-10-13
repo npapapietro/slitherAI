@@ -46,15 +46,15 @@ namespace Slither.ScreenCapture
             {
                 try
                 {
-                    using MemoryStream ms = new MemoryStream();
-                    if(new ScreenSelection().Run(ms))
-                    {   
-                        ScreenShots.Add(new ScreenSample
-                        {
-                            TimeStamp = DateTime.UtcNow,
-                            Screen = ms.ToArray()
-                        });
-                    }
+                    // using MemoryStream ms = new MemoryStream();
+                    // if(new ScreenSelection().Run(ms))
+                    // {   
+                    //     ScreenShots.Add(new ScreenSample
+                    //     {
+                    //         TimeStamp = DateTime.UtcNow,
+                    //         Screen = ms.ToArray()
+                    //     });
+                    // }
                     
 
                     if(ScreenShots.Count > 50)

@@ -7,6 +7,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+// using ObjCRuntime;
 
 namespace Slither.ScreenCapture
 {
@@ -25,53 +26,13 @@ namespace Slither.ScreenCapture
             public int bottom;
         }
 
-        public static Bitmap CurrentScreen(this IWebDriver driver)
+        public static Bitmap SeleniumScreenshot(this IWebDriver driver)
         {
             try
             {
                 var ss = (driver as ITakesScreenshot).GetScreenshot();
-                return new Bitmap(new MemoryStream(ss.AsByteArray));
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                throw;
-            }
-        }
-
-        public static Mat AsCNNArray(this Bitmap mat)
-        {
-            var ary = mat.ToMat().Resize(new OpenCvSharp.Size(299, 299));
-            ary /= 127.5;
-            ary -= 1.0;
-            return ary;
-        }
-
-
-        public static byte[] CurrentScreenBytes(this IWebDriver driver)
-        {
-            try
-            {
-                return (driver as ITakesScreenshot).GetScreenshot().AsByteArray;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                throw;
-            }
-        }
-
-        public static MemoryStream StreamScreen(this IWebDriver driver)
-        {
-            try
-            {
-                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-                var ss = (driver as ITakesScreenshot).GetScreenshot();
-
-                stopwatch.Stop();
-                Console.WriteLine($"Time to take screen {stopwatch.ElapsedMilliseconds}");
-                var stream = new MemoryStream(ss.AsByteArray);
-                return stream;
+                var ms = new MemoryStream(ss.AsByteArray);
+                return new Bitmap(ms);
             }
             catch (Exception e)
             {
@@ -83,7 +44,7 @@ namespace Slither.ScreenCapture
         [DllImport("user32.dll", SetLastError = true)]
         static extern bool GetWindowRect(IntPtr hWnd, out Rectangle rectangle);
 
-        public static bool GetScreen(out Bitmap img)
+        public static bool GetScreenWindows(out Bitmap img)
         {
             try
             {
@@ -115,6 +76,37 @@ namespace Slither.ScreenCapture
             }
             img = new Bitmap(0,0);
             return false;
+        }
+
+        public static bool GetScreenOSX(out Bitmap img)
+        {
+            try
+            {
+                IntPtr windowinfo = CGWindowListCopyWindowInfo(0, 0);
+                Console.WriteLine(windowinfo);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            img = new Bitmap(0,0);
+            return false;
+        }
+
+        public static bool GetScreen(out Bitmap img, IWebDriver driver=null)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) )
+            {
+                return GetScreenWindows(out img);
+            }
+            else
+            {
+                if (driver is null)
+                {
+                    throw new NullReferenceException("driver must not be null");
+                }
+                img = driver.SeleniumScreenshot();
+            }
         }
     }
 }

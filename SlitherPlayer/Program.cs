@@ -1,4 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using OpenQA.Selenium.Chrome;
 using Slither.Runtime;
 using Slither.ScreenCapture;
@@ -9,17 +11,15 @@ namespace Slither
     {
         static void Main(string[] args)
         {
-    
-            
-            using var runtime = new SlitherPlayer();
-
-            runtime.Run();
-
+            int x = 3;
+            x.GetScreenOSX(out var y);
         }
     }
 
     public static class PlayerConfig
     {
+        internal static readonly bool TestScreen =false;
+        internal static readonly bool TestKeys = false;
         public static string Channel = "localhost:50051";
         public static string ModelFile = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? 
             @"/Users/nathan/Git/slitherAI/SlitherPlayer/ResNet50.onnx" : @"C:\Users\Nate-PC\Documents\git\Slither\ResNet50.onnx";
@@ -37,9 +37,5 @@ namespace Slither
 
         public static int RunLimit = int.MaxValue;
         public static bool TestSelect = false;
-
-        public static bool TestScreen = true;
-
-        public static bool TestKeys = false;
     }
 }
