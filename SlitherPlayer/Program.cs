@@ -1,4 +1,5 @@
-﻿using OpenQA.Selenium.Chrome;
+﻿using System.Runtime.InteropServices;
+using OpenQA.Selenium.Chrome;
 using Slither.Runtime;
 
 namespace Slither
@@ -19,7 +20,8 @@ namespace Slither
     public static class PlayerConfig
     {
         public static string Channel = "localhost:50051";
-        public static string ModelFile = @"C:\Users\Nate-PC\Documents\git\Slither\ResNet50.onnx";
+        public static string ModelFile = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? 
+            @"/Users/nathan/Git/slitherAI/SlitherPlayer/ResNet50.onnx" : @"C:\Users\Nate-PC\Documents\git\Slither\ResNet50.onnx";
         public static string[] Options = {
             // "--no-sandbox",
             // "--disable-dev-shm-usage",
