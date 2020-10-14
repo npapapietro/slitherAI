@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using OpenQA.Selenium;
+using Slither.Environment;
+using Slither.Models;
 
 namespace Slither.ScreenCapture
 {
@@ -17,17 +19,19 @@ namespace Slither.ScreenCapture
 
         private IList<Thread> ImageThreads;
 
+        private readonly IFeaturizer Model;
+
         public ScreenStream(IWebDriver driver)
         {
             this.driver = driver;
             KillSignal = false;
             ScreenShots = new List<ScreenSample>();
             ImageThreads = new List<Thread>();
+            Model = new Featurizer(PlayerConfig.ModelFile);
         }
 
         public void Run(int threadCount = 1)
         {
-
             for(var i = 0; i < threadCount; i++){
                 var thread = new Thread(new ThreadStart(CaptureImage)); 
                 ImageThreads.Add(thread);
@@ -46,16 +50,12 @@ namespace Slither.ScreenCapture
             {
                 try
                 {
-                    // using MemoryStream ms = new MemoryStream();
-                    // if(new ScreenSelection().Run(ms))
-                    // {   
-                    //     ScreenShots.Add(new ScreenSample
-                    //     {
-                    //         TimeStamp = DateTime.UtcNow,
-                    //         Screen = ms.ToArray()
-                    //     });
-                    // }
-                    
+                    if(Model.GetImageFeatures(driver, out var img))
+                    {
+                        ScreenShots.Add(new ScreenSample{
+                            Screen = img,
+                        });
+                    }                   
 
                     if(ScreenShots.Count > 50)
                     {
@@ -76,13 +76,21 @@ namespace Slither.ScreenCapture
         public void Dispose()
         {
             KillSignal = true;
+            Model.Dispose();
         }
 
         public class ScreenSample
         {
-            public DateTime TimeStamp { get; set; }
+            public int Epoch { get; set; } = DateTime.UtcNow.ToEpoch();
 
-            public byte[] Screen { get; set; }
+            public float[] Screen { get; set; }
+        }
+
+        public float[] ClosestImage(int epoch)
+        {
+            return ScreenShots
+                .Select( x => new {x.Screen, epoch = Math.Abs(epoch - x.Epoch)})
+                .Aggregate((x, y) => x.epoch < y.epoch ? x : y).Screen;
         }
 
     }

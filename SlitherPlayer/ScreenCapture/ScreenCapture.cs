@@ -78,35 +78,21 @@ namespace Slither.ScreenCapture
             return false;
         }
 
-        public static bool GetScreenOSX(out Bitmap img)
-        {
-            try
-            {
-                IntPtr windowinfo = CGWindowListCopyWindowInfo(0, 0);
-                Console.WriteLine(windowinfo);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-            img = new Bitmap(0,0);
-            return false;
-        }
 
         public static bool GetScreen(out Bitmap img, IWebDriver driver=null)
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) )
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 return GetScreenWindows(out img);
             }
-            else
+
+            if (driver is null)
             {
-                if (driver is null)
-                {
-                    throw new NullReferenceException("driver must not be null");
-                }
-                img = driver.SeleniumScreenshot();
+                throw new NullReferenceException("driver must not be null");
             }
+            img = driver.SeleniumScreenshot();
+            return true;
+        
         }
     }
 }

@@ -22,8 +22,9 @@ namespace Slither.Environment
             public int TimeStamp { get; set; }
 
         }
-        public static IEnvironment GetState(this IWebDriver driver, IFeaturizer model, bool withWait = false)
+        public static IEnvironment GetState(this IWebDriver driver, ScreenStream stream, bool withWait = false)
         {
+            var TimeStamp = DateTime.UtcNow.ToEpoch();
             try
             {
                 if (withWait)
@@ -31,18 +32,16 @@ namespace Slither.Environment
                     new WebDriverWait(driver, TimeSpan.FromSeconds(15))
                     .Until(driver => driver.FindSlitherLength().Count > 0);
                 }
-
-
                 var lengthText = driver.FindSlitherLength().FirstOrDefault().Text;
                 var playbuttonDisplayed = driver.FindPlayButton().Displayed;
                 Int32.TryParse(lengthText, out var length);
 
                 var state = new Environment
                 {
-                    TimeStamp = DateTime.UtcNow.ToEpoch(),
+                    TimeStamp = TimeStamp,
                     Length = Convert.ToInt32(length),
                     Dead = Convert.ToInt32(length) <= 0 || playbuttonDisplayed,
-                    ScreenState = model.GetImageFeatures()
+                    ScreenState = stream.ClosestImage(TimeStamp)
                 } as IEnvironment;
 
                 return state;
@@ -51,10 +50,10 @@ namespace Slither.Environment
             {
                 return new Environment
                 {
-                    TimeStamp = DateTime.UtcNow.ToEpoch(),
+                    TimeStamp = TimeStamp,
                     Length = 0,
                     Dead = true,
-                    ScreenState = model.GetImageFeatures()
+                    ScreenState = stream.ClosestImage(TimeStamp)
                 } as IEnvironment;
             }
             catch (Exception e)
@@ -98,7 +97,14 @@ namespace Slither.Environment
             };
 
             return testRequest as IEnvironment;
+        }
 
+        public static (int, int) GetCenterCoordinates(this IWebDriver driver)
+        {
+            var canvas = driver.FindElement(By.XPath(@"//canvas[@class='nsi' and @width > 500]"));
+            var width = canvas.Size.Width;
+            var height = canvas.Size.Height;
+            return (width / 2, height / 2);
         }
 
     }

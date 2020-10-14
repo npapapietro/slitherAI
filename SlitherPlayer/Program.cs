@@ -11,8 +11,19 @@ namespace Slither
     {
         static void Main(string[] args)
         {
-            int x = 3;
-            x.GetScreenOSX(out var y);
+            Warning();
+
+            using var runtime = new SlitherPlayer();
+
+            runtime.Run();
+        }
+
+        static void Warning()
+        {
+            if(!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Console.WriteLine("Warning: Operating system doesn't expose screen shot easily, deferring to selenium's built in method.");
+            }
         }
     }
 
@@ -36,6 +47,8 @@ namespace Slither
         public static int StepLimit = 5000000;
 
         public static int RunLimit = int.MaxValue;
-        public static bool TestSelect = false;
+        public static bool TestSelect = true;
     }
+
+
 }

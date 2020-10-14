@@ -1,11 +1,13 @@
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using OpenCvSharp;
+using OpenQA.Selenium;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using System;
 using System.Collections.Generic;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 
@@ -65,25 +67,26 @@ namespace Slither.Models
             return img;
         }
 
-        public float[] GetImageFeatures()
-        {   
-            using MemoryStream imgStream = new MemoryStream();
-            var stopWatch = System.Diagnostics.Stopwatch.StartNew();
-            var input = PreProcess(imgStream);
-
-            var inputs = new List<NamedOnnxValue>
+        public bool GetImageFeatures(IWebDriver driver, out float[] image)
+        {
+            if (ScreenCapture.ScreenCapture.GetScreen(out var bitmap, driver))
             {
-                NamedOnnxValue.CreateFromTensor("input_1", input) // (3, 299, 299)
-            };
+                using var imgStream = new MemoryStream();
+                bitmap.Save(imgStream, ImageFormat.Png);
+                var input = PreProcess(imgStream);
 
-            using var results = Session.Run(inputs); // (2048,)
-            var img = results.First().AsTensor<float>().ToArray();
+                var inputs = new List<NamedOnnxValue>
+                {
+                    NamedOnnxValue.CreateFromTensor("input_1", input) // (3, 299, 299)
+                };
 
-            stopWatch.Stop();
-
-            Console.WriteLine($"Image featurization took {stopWatch.ElapsedMilliseconds}");
-
-            return img;
+                using var results = Session.Run(inputs); // (2048,)
+                image = results.First().AsTensor<float>().ToArray();   
+                return true; 
+            }
+            
+            image = new float[]{};
+            return false;
         }
 
         public void Dispose()
