@@ -16,7 +16,7 @@ namespace Slither.Client
             this.client = new SlitherTrainer.SlitherTrainerClient(channel);
         }
 
-        public Moves GetNextMove(IEnvironment environment)
+        public Moves GetNextMove(IEnvironmentState environment)
         {
             var request = new MoveRequest();
             request.Image.Add(environment.ScreenState);
@@ -38,7 +38,7 @@ namespace Slither.Client
             client.Reset(request);
         }
 
-        public void SendResults(float reward, IEnvironment currentState, Moves nextMove, IEnvironment nextState)
+        public void SendResults(float reward, IEnvironmentState currentState, Moves nextMove, IEnvironmentState nextState)
         {
             var request = new RememberRequest{
                 Action = nextMove,

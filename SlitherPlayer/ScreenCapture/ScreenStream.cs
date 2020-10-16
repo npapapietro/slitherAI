@@ -6,13 +6,17 @@ using System.Threading;
 using OpenQA.Selenium;
 using Slither.Environment;
 using Slither.Models;
+using Slither.Utils;
 
 namespace Slither.ScreenCapture
 {
     public class ScreenStream : IDisposable
     {
-        public volatile bool KillSignal;
+        private volatile bool KillSignal;
 
+        /// <summary>
+        /// List of records of screen shots, max 50
+        /// </summary>
         public volatile IList<ScreenSample> ScreenShots;
 
         private readonly IWebDriver driver;
@@ -30,6 +34,10 @@ namespace Slither.ScreenCapture
             Model = new Featurizer(PlayerConfig.ModelFile);
         }
 
+        /// <summary>
+        /// Spawns threads that continuously screenshot the web browser
+        /// </summary>
+        /// <param name="threadCount">Number of threads to spawn</param>
         public void Run(int threadCount = 1)
         {
             for(var i = 0; i < threadCount; i++){
@@ -43,6 +51,10 @@ namespace Slither.ScreenCapture
             }
         }
 
+        /// <summary>
+        /// This function takes a screenshot and appends the featurized result
+        /// to `ScreenShots`
+        /// </summary>
         private void CaptureImage()
         {
             int id = Thread.CurrentThread.ManagedThreadId;
@@ -79,6 +91,9 @@ namespace Slither.ScreenCapture
             Model.Dispose();
         }
 
+        /// <summary>
+        /// Record to hold screenshot (featurized) and timestamp taken at.
+        /// </summary>
         public class ScreenSample
         {
             public int Epoch { get; set; } = DateTime.UtcNow.ToEpoch();
@@ -86,6 +101,11 @@ namespace Slither.ScreenCapture
             public float[] Screen { get; set; }
         }
 
+        /// <summary>
+        /// Returns the featurized image closest in time.
+        /// </summary>
+        /// <param name="epoch">Timestamp in epoch units</param>
+        /// <returns>Featurized Image (2048,)</returns>
         public float[] ClosestImage(int epoch)
         {
             return ScreenShots

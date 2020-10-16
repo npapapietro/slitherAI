@@ -3,12 +3,10 @@ using System.Diagnostics;
 using Grpc.Core;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
-using OpenQA.Selenium.Firefox;
 using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Support.UI;
 using Slither.Client;
 using Slither.Environment;
-using Slither.Models;
 using Slither.Proto;
 using Slither.ScreenCapture;
 
@@ -17,52 +15,38 @@ namespace Slither.Runtime
     public class SlitherPlayer : IRunTime, IDisposable
     {
         private readonly IWebDriver Driver;
-        
+
         private readonly IClient gRPCClient;
 
         private readonly ScreenStream ImageStream;
+
+        private readonly IEnvironment environment;
 
         private Coorindates MoveSet;
 
         public SlitherPlayer()
         {
-            var useFF = false;
+            var options = new ChromeOptions();
+            options.SetLoggingPreference(LogType.Client, LogLevel.Off);
 
-
-            if (useFF)
+            foreach (var opt in PlayerConfig.Options)
             {
-                var options = new FirefoxOptions();
-                options.SetLoggingPreference(LogType.Client, LogLevel.Off);
-
-                foreach (var opt in PlayerConfig.Options)
-                {
-                    options.AddArgument(opt);
-                }
-
-                Driver = new FirefoxDriver(options);
+                options.AddArgument(opt);
             }
-            else
-            {
-                var options = new ChromeOptions();
-                options.SetLoggingPreference(LogType.Client, LogLevel.Off);
 
-                foreach (var opt in PlayerConfig.Options)
-                {
-                    options.AddArgument(opt);
-                }
-
-                Driver = new ChromeDriver(options);
-            }
+            Driver = new ChromeDriver(options);
 
             gRPCClient = new GrpcClient(new Channel(PlayerConfig.Channel, ChannelCredentials.Insecure));
-            
+
             ImageStream = new ScreenStream(Driver);
+
+            environment = new Environment.Environment();
 
         }
 
-        public IEnvironment CurrentState(bool withWait = false)
+        public IEnvironmentState CurrentState(bool withWait = false)
         {
-            return Driver.GetState(ImageStream, withWait);
+            return environment.GetState(Driver, ImageStream, withWait);
         }
 
         private int MainLoop()
@@ -70,8 +54,9 @@ namespace Slither.Runtime
             WebDriverWait wait = new WebDriverWait(Driver, TimeSpan.FromSeconds(5));
             Driver.Navigate().GoToUrl("http://slither.io");
 
-            var (x, y) = Driver.GetCenterCoordinates();
-            MoveSet = new Coorindates(x, y, R: 20);
+            int x, y;
+            while (!environment.GetCenter(Driver, out x, out y))
+                MoveSet = new Coorindates(x, y, R: 20);
 
             ImageStream.Run();
 
@@ -84,9 +69,10 @@ namespace Slither.Runtime
 
                 try
                 {
-                    Console.WriteLine($"Entering game.");
-                    while (!wait.Until(driver => driver.FindPlayButton().Displayed)) { }
+                    while (!wait.Until(environment.GetPlayButton)) { }
+
                     Reset();
+
                     Console.WriteLine($"Entering game.");
                 }
                 catch (ElementClickInterceptedException)
@@ -144,114 +130,59 @@ namespace Slither.Runtime
 
         public void Run()
         {
-            if (PlayerConfig.TestgRPC)
-            {
-                TestConnection();
 
-            }
-            else if (PlayerConfig.TestSelect)
+            if (PlayerConfig.TestSelect)
             {
                 TestSelection();
             }
-            else if (PlayerConfig.TestScreen)
-            {
-                TestScreen();
-            }
-            else if (PlayerConfig.TestKeys)
-            {
-                TestKeys();
-            }
+
             else
             {
                 MainLoop();
             }
         }
 
-        private void TestScreen()
-        {
-            WebDriverWait wait = new WebDriverWait(Driver, TimeSpan.FromSeconds(15));
-            Driver.Navigate().GoToUrl("http://slither.io");
-            wait.Until(driver => driver.FindPlayButton().Displayed);
-            Driver.FindPlayButton().Click();
-            ImageStream.Run();
-            while (Stopwatch.StartNew().ElapsedMilliseconds < 15 * 1000)
-            {
 
-            }
-
-            Console.WriteLine(ImageStream.ScreenShots.Count);
-        }
 
         private void TestSelection()
         {
             WebDriverWait wait = new WebDriverWait(Driver, TimeSpan.FromSeconds(15));
             Driver.Navigate().GoToUrl("http://slither.io");
-            wait.Until(driver => driver.FindPlayButton().Displayed);
+            while (!wait.Until(environment.GetPlayButton)) { }
+            Reset();
 
-            Driver.FindPlayButton().Click();
-
-            var (xx, y) = Driver.GetCenterCoordinates();
-            MoveSet = new Coorindates(xx, y, R: 10);
-
-            // var wait2 = new WebDriverWait(Driver, TimeSpan.FromSeconds(15));
-            // wait2.Until(driver => driver.FindElements(By.XPath(@"//*[contains(text(),'Your length')]")).Count > 0);
-
-            // var result = Driver.FindElement(By.XPath(@"//*[contains(.,'Your length')]/span[2]")).Text;
+            environment.GetCenter(Driver, out var xr, out var yr);
+            MoveSet = new Coorindates(xr, yr, R: 10);
 
             while (Stopwatch.StartNew().ElapsedMilliseconds < 15 * 1000)
             {
                 var x = Driver.FindElement(By.XPath(@"//canvas[@class='nsi' and @width > 500]"));
                 Console.WriteLine(x.Size);
-                var r = new Random().Next(7);
-                try
-                {
-                    ConvertToSlitherMove(r,true).Build().Perform();
-                }
-                catch(Exception e)
-                {
-                    Console.WriteLine(r);
-                    Console.WriteLine(e);
-                    continue;
-                }
-            }
-
-        }
-
-        private void TestConnection()
-        {
-
-            var fakeState = EnvironmentUtils.MockState();
-            var moveResult = gRPCClient.GetNextMove(fakeState);
-            Console.WriteLine(moveResult);
-
-            gRPCClient.SendReset(0f, 0, 0);
-
-            gRPCClient.StepUpdate(1);
-
-            // gRPCClient.SendResults(0f, fakeState, Moves.Boost, fakeState);
-
-        }
-
-
-        private void TestKeys()
-        {
-            WebDriverWait wait = new WebDriverWait(Driver, TimeSpan.FromSeconds(15));
-            Driver.Navigate().GoToUrl("http://slither.io");
-            wait.Until(driver => driver.FindPlayButton().Displayed);
-
-            Driver.FindPlayButton().Click();
-
-            while (true)
-            {
-                new OpenQA.Selenium.Interactions.Actions(Driver)
-                    .MoveByOffset(15, -20)
-                    .Perform();
-                new OpenQA.Selenium.Interactions.Actions(Driver)
-                    .MoveByOffset(-15, 20)
-                    .Perform();
+                var testMoveSet = new []{
+                    Moves.Pi // left
+                    ,Moves.Pi0 // right
+                    ,Moves.Pi12 // up
+                    ,Moves.Pi32 // down
+                    ,Moves.Pi14 // upright
+                    ,Moves.Pi54 // downleft
+                    ,Moves.Pi34 // upleft
+                    ,Moves.Pi74 // downright
+                };
+                foreach (int move in testMoveSet){
+                    try
+                    {
+                        ConvertToSlitherMove(move, true).Build().Perform();
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(move);
+                        Console.WriteLine(e);
+                        continue;
+                    }
+                }          
             }
         }
-
+        
         public void Reset(float score, int step, int run)
         {
             gRPCClient.SendReset(score, step, run);
@@ -259,8 +190,8 @@ namespace Slither.Runtime
 
         public void Reset()
         {
-            var playButton = Driver.FindPlayButton();
-            if (playButton.Displayed)
+
+            if (environment.GetPlayButton(Driver, out var playButton))
             {
                 playButton.Click();
             }
@@ -270,7 +201,7 @@ namespace Slither.Runtime
             }
         }
 
-        public float Move(Actions action, IEnvironment currentState, out IEnvironment nextState)
+        public float Move(Actions action, IEnvironmentState currentState, out IEnvironmentState nextState)
         {
             action.Perform();
             nextState = CurrentState();
@@ -292,21 +223,21 @@ namespace Slither.Runtime
         {
             ImageStream.Dispose();
             Driver.Dispose();
-            
+
         }
 
 
         private Actions ConvertToSlitherMove(Moves move)
         {
-            return ConvertToSlitherMove((int) move);
+            return ConvertToSlitherMove((int)move);
 
         }
 
-        private Actions ConvertToSlitherMove(int move, bool verbose=false)
+        private Actions ConvertToSlitherMove(int move, bool verbose = false)
         {
             var action = new OpenQA.Selenium.Interactions.Actions(Driver);
             var elm = Driver.FindElement(By.XPath(@"//canvas[@class='nsi' and @width > 500]"));
-            
+
 
             var (x, y) = MoveSet.PositionMapping[move];
 
@@ -314,8 +245,8 @@ namespace Slither.Runtime
             {
                 Console.WriteLine($"Moving to point ({x},{y})");
             }
-                        
-            return action.MoveToElement(elm).MoveByOffset(x,y);
+
+            return action.MoveToElement(elm).MoveByOffset(x, y);
         }
 
     }

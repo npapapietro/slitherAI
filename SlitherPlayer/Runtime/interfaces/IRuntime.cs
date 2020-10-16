@@ -5,7 +5,7 @@ namespace Slither.Runtime
 {
     public interface IRunTime
     {
-        IEnvironment CurrentState(bool withWait=false);
+        IEnvironmentState CurrentState(bool withWait=false);
 
         void Reset(float score, int step, int run);
 
@@ -13,7 +13,7 @@ namespace Slither.Runtime
 
         void Run();
 
-        float Move(Actions action, IEnvironment currentState, out IEnvironment nextState);
+        float Move(Actions action, IEnvironmentState currentState, out IEnvironmentState nextState);
 
     }
 }

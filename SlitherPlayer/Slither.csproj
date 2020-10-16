@@ -29,7 +29,6 @@
     <Content Include="Brain\IBrain.cs" />
     <Content Include="Client\GrpcClient.cs" />
     <Content Include="Models\Featurizer.cs" />
-    <Content Include="Models\FeatureUtils.cs" />
     <Content Include="Runtime\interfaces\IRuntime.cs" />
     <Content Include="Runtime\interfaces\IEnvironment.cs" />
     <Content Include="Client\interfaces\IClient.cs" />
@@ -40,5 +39,6 @@
     <Content Include="ScreenCapture\ScreenStream.cs" />
     <Content Include="ScreenCapture\ScreenSelection.cs" />
     <Content Include="Environment\Coordinates.cs" />
+    <Content Include="Utils\Utils.cs" />
   </ItemGroup>
 </Project>

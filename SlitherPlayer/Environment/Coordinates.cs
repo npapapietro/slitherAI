@@ -12,6 +12,9 @@ namespace Slither.Environment
         public readonly int Y;
         public readonly int R;
 
+        /// <summary>
+        /// The coordinates of the mouse position around a unit circle centered on the slither.
+        /// </summary>
         public readonly (int, int)[] PositionMapping;
 
         public Coorindates(int X, int Y, int R=10)
@@ -32,11 +35,6 @@ namespace Slither.Environment
                 );
             })
             .ToArray();
-        }
-
-        
-            
-
-
+        }   
     }
 }

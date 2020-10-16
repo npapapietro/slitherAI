@@ -29,8 +29,6 @@ namespace Slither
 
     public static class PlayerConfig
     {
-        internal static readonly bool TestScreen =false;
-        internal static readonly bool TestKeys = false;
         public static string Channel = "localhost:50051";
         public static string ModelFile = RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? 
             @"/Users/nathan/Git/slitherAI/SlitherPlayer/ResNet50.onnx" : @"C:\Users\Nate-PC\Documents\git\Slither\ResNet50.onnx";
@@ -41,8 +39,6 @@ namespace Slither
             // "--disable-logging",
             // "--headless"
         };
-
-        public static bool TestgRPC = false;
 
         public static int StepLimit = 5000000;
 

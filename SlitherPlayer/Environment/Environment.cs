@@ -1,17 +1,19 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Support.UI;
 using Slither.Models;
 using Slither.Runtime;
 using Slither.ScreenCapture;
+using Slither.Utils;
 
 namespace Slither.Environment
 {
-    public static class EnvironmentUtils
+    public class Environment : IEnvironment
     {
-        private class Environment : IEnvironment
+        private class EnvironmentState : IEnvironmentState
         {
             public float[] ScreenState { get; set; }
 
@@ -22,89 +24,80 @@ namespace Slither.Environment
             public int TimeStamp { get; set; }
 
         }
-        public static IEnvironment GetState(this IWebDriver driver, ScreenStream stream, bool withWait = false)
+        public IEnvironmentState GetState(IWebDriver driver, ScreenStream stream, bool withWait = false)
         {
+
+            Thread.Sleep(withWait ? 1000 : 0);
+
+            if (!GetSlitherLength(driver, out var length))
+            {
+                length = 0;
+            }
+
+            var playbuttonDisplayed = GetPlayButton(driver, out var playbutton) && (playbutton?.Displayed ?? false);
+
             var TimeStamp = DateTime.UtcNow.ToEpoch();
+
+            return new EnvironmentState
+            {
+                TimeStamp = TimeStamp,
+                Length = length,
+                Dead = length <= 0 || playbuttonDisplayed,
+                ScreenState = stream.ClosestImage(TimeStamp)
+            } as IEnvironmentState;
+
+        }
+
+        public bool GetSlitherLength(IWebDriver driver, out int length)
+        {
+            length = -1;
             try
             {
-                if (withWait)
-                {
-                    new WebDriverWait(driver, TimeSpan.FromSeconds(15))
-                    .Until(driver => driver.FindSlitherLength().Count > 0);
-                }
-                var lengthText = driver.FindSlitherLength().FirstOrDefault().Text;
-                var playbuttonDisplayed = driver.FindPlayButton().Displayed;
-                Int32.TryParse(lengthText, out var length);
-
-                var state = new Environment
-                {
-                    TimeStamp = TimeStamp,
-                    Length = Convert.ToInt32(length),
-                    Dead = Convert.ToInt32(length) <= 0 || playbuttonDisplayed,
-                    ScreenState = stream.ClosestImage(TimeStamp)
-                } as IEnvironment;
-
-                return state;
-            }
-            catch (StaleElementReferenceException)
-            {
-                return new Environment
-                {
-                    TimeStamp = TimeStamp,
-                    Length = 0,
-                    Dead = true,
-                    ScreenState = stream.ClosestImage(TimeStamp)
-                } as IEnvironment;
+                var lengthElment = driver.FindElement(By.XPath(@"//*[contains(.,'Your length')]/span[2]"));
+                return Int32.TryParse(lengthElment.Text, out length);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-                throw;
             }
-
+            return false;
         }
 
-        public static ReadOnlyCollection<IWebElement> FindSlitherLength(this IWebDriver driver)
+        public bool GetPlayButton(IWebDriver driver, out IWebElement playButton)
         {
-            return driver.FindElements(By.XPath(@"//*[contains(.,'Your length')]/span[2]"));
-        }
-
-        public static IWebElement FindPlayButton(this IWebDriver driver)
-        {
-            return driver.FindElement(By.XPath(@"//*[contains(text(),'Play')]"));
-        }
-
-        public static int ToEpoch(this DateTime time)
-        {
-            var t = time - new DateTime(1970, 1, 1);
-            return (int)t.TotalSeconds;
-        }
-
-        public static IEnvironment MockState()
-        {
-            Random randNum = new Random();
-            var fakeImage = Enumerable
-                .Repeat(0, 2048)
-                .Select(i => ((Single)randNum.Next(0, 1000)) / 1000f)
-                .ToArray();
-
-            var testRequest = new Environment
+            playButton = null;
+            try
             {
-                Dead = false,
-                TimeStamp = DateTime.UtcNow.ToEpoch(),
-                Length = 5,
-                ScreenState = fakeImage
-            };
-
-            return testRequest as IEnvironment;
+                playButton = driver.FindElement(By.XPath(@"//*[contains(text(),'Play')]"));
+                return playButton?.Displayed ?? false;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            return false;
         }
 
-        public static (int, int) GetCenterCoordinates(this IWebDriver driver)
+        public bool GetPlayButton(IWebDriver driver)
         {
-            var canvas = driver.FindElement(By.XPath(@"//canvas[@class='nsi' and @width > 500]"));
-            var width = canvas.Size.Width;
-            var height = canvas.Size.Height;
-            return (width / 2, height / 2);
+            return this.GetPlayButton(driver, out _);
+        }
+
+        public bool GetCenter(IWebDriver driver, out int x, out int y)
+        {
+            (x,y) = (0, 0);
+            try
+            {
+                var canvas = driver.FindElement(By.XPath(@"//canvas[@class='nsi' and @width > 500]"));
+                x = canvas.Size.Width / 2;
+                y = canvas.Size.Height / 2;
+                return true;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            return false;
         }
 
     }

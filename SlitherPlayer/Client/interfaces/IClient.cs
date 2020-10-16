@@ -11,8 +11,8 @@ namespace Slither.Client
 
         void StepUpdate(int step);
 
-        Moves GetNextMove(IEnvironment environment);
+        Moves GetNextMove(IEnvironmentState environment);
 
-        void SendResults(float reward, IEnvironment currentState, Moves nextMove, IEnvironment nextState);
+        void SendResults(float reward, IEnvironmentState currentState, Moves nextMove, IEnvironmentState nextState);
     }
 }

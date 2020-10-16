@@ -16,9 +16,31 @@ namespace Slither.ScreenCapture
     /// </summary>
     public static class ScreenCapture
     {
+        /// <summary>
+        /// Uses the selenium web driver to screen shot, rather slow on most systems over native screen shot calls.
+        /// </summary>
+        /// <param name="driver">Web driver</param>
+        /// <param name="img">Out image</param>
+        /// <returns>Flag if screen shot was successful</returns>
+        public static bool SeleniumScreenshot(this IWebDriver driver, out Bitmap img)
+        {
+            try
+            {
+                var ss = (driver as ITakesScreenshot).GetScreenshot();
+                var ms = new MemoryStream(ss.AsByteArray);
+                img = new Bitmap(ms);
+                return true;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            img = new Bitmap(0,0);
+            return false;
+        }
 
         [StructLayout(LayoutKind.Sequential)]
-        public struct Rectangle
+        struct Rectangle
         {
             public int left;
             public int top;
@@ -26,24 +48,14 @@ namespace Slither.ScreenCapture
             public int bottom;
         }
 
-        public static Bitmap SeleniumScreenshot(this IWebDriver driver)
-        {
-            try
-            {
-                var ss = (driver as ITakesScreenshot).GetScreenshot();
-                var ms = new MemoryStream(ss.AsByteArray);
-                return new Bitmap(ms);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                throw;
-            }
-        }
-
         [DllImport("user32.dll", SetLastError = true)]
         static extern bool GetWindowRect(IntPtr hWnd, out Rectangle rectangle);
 
+        /// <summary>
+        /// Screen shots the web browser launched by selenium and crops it a bit
+        /// </summary>
+        /// <param name="img">Out variable of screen shot</param>
+        /// <returns>If screen shot was successful</returns>
         public static bool GetScreenWindows(out Bitmap img)
         {
             try
@@ -78,7 +90,12 @@ namespace Slither.ScreenCapture
             return false;
         }
 
-
+        /// <summary>
+        /// Captures the web browser screen, depending on which operating system, will call different implementations of it
+        /// </summary>
+        /// <param name="img">Out variable of the image</param>
+        /// <param name="driver">Web driver is needed for OSX and Linux until native calls can be made for screen shotting.</param>
+        /// <returns></returns>
         public static bool GetScreen(out Bitmap img, IWebDriver driver=null)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -90,8 +107,7 @@ namespace Slither.ScreenCapture
             {
                 throw new NullReferenceException("driver must not be null");
             }
-            img = driver.SeleniumScreenshot();
-            return true;
+            return driver.SeleniumScreenshot(out img);
         
         }
     }
