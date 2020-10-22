@@ -1,8 +1,6 @@
-using System;
-
-namespace Slither.Environment
+namespace SlitherPlayer.Environment
 {
-    public interface IEnvironment
+    public interface IEnvironmentState
     {
         float[] ScreenState { get; }
 
@@ -14,6 +12,6 @@ namespace Slither.Environment
         /// Unix epoch format
         /// </summary>
         /// <value></value>
-        int TimeStamp { get; }     
+        int TimeStamp { get; }   
     }
 }

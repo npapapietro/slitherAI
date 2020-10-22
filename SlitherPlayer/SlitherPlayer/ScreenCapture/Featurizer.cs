@@ -1,6 +1,6 @@
-using Microsoft.ML.OnnxRuntime;
+﻿using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
-using OpenCvSharp;
+using OpenQA.Selenium;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -8,28 +8,44 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
-namespace Slither.Models
+namespace SlitherPlayer.ScreenCapture
 {
-    public class Featurizer : IFeaturizer
+    public class Featurizer: IFeaturizer
     {
-        private readonly InferenceSession Session;
+        private readonly InferenceSession session;
 
-        public Featurizer(string ModelFile)
+        public Featurizer(string OnnxModelFile)
         {
-            Session = new InferenceSession(ModelFile);
+            session = new InferenceSession(OnnxModelFile);
         }
 
-        private Tensor<float> PreProcess(MemoryStream stream)
+        public void Dispose()
         {
+            session.Dispose();
+        }
 
-            using Image<Rgb24> image = Image<Rgba32>.Load(stream, out var format).CloneAs<Rgb24>();
-            using Stream imageStream = new MemoryStream();
+        public float[] GetImageFeatures(byte[] stream)
+        {
+            var input = PreProcess(stream);
+
+            var inputs = new List<NamedOnnxValue>
+            {
+                NamedOnnxValue.CreateFromTensor("input_1", input) // (3, 299, 299)
+            };
+
+            using var results = session.Run(inputs); // (2048,)
+            return results.First().AsTensor<float>().ToArray();
+        }
+
+        private Tensor<float> PreProcess(ReadOnlySpan<byte> stream)
+        {
+            using Image<Rgb24> image = Image.Load(stream, out var format).CloneAs<Rgb24>();
             var paddedHeight = 299;
             var paddedWidth = 299;
 
             image.Mutate(x => x.Resize(paddedHeight, paddedWidth));
-            image.Save(imageStream, format);
 
             Tensor<float> input = new DenseTensor<float>(new[] { 1, 3, paddedHeight, paddedWidth });
 
@@ -46,22 +62,6 @@ namespace Slither.Models
             }
             return input;
         }
-        public float[] GetImage(MemoryStream imgStream)
-        {
-            var input = PreProcess(imgStream);
 
-            var inputs = new List<NamedOnnxValue>
-            {
-                NamedOnnxValue.CreateFromTensor("input_1", input)
-            };
-
-            using var results = Session.Run(inputs);
-            return results.First().AsTensor<float>().ToArray();
-        }
-
-        public void Dispose()
-        {
-            Session.Dispose();
-        }
     }
 }

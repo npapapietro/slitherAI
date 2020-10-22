@@ -1,29 +1,21 @@
-using System;
 using Grpc.Core;
-using Slither.Environment;
 using Slither.Proto;
+using SlitherPlayer.Environment;
 
-
-namespace Slither.Client
+namespace SlitherPlayer.GRPC
 {
-    public class GrpcClient : IClient
+    public class Client: IClient
     {
         readonly SlitherTrainer.SlitherTrainerClient client;
 
-        public GrpcClient(Channel channel)
-        {
+        public Client(Channel channel) => client = new SlitherTrainer.SlitherTrainerClient(channel);
 
-            this.client = new SlitherTrainer.SlitherTrainerClient(channel);
-        }
-
-        public Moves GetNextMove(IEnvironment environment)
+        public MoveResponse GetNextMove(IEnvironmentState state)
         {
             var request = new MoveRequest();
-            request.Image.Add(environment.ScreenState);
+            request.Image.Add(state.ScreenState);
 
-            var response = client.NextMove(request);
-
-            return response.Action;
+            return client.NextMove(request);
         }
 
         public void SendReset(float score, int step, int run)
@@ -38,12 +30,14 @@ namespace Slither.Client
             client.Reset(request);
         }
 
-        public void SendResults(float reward, IEnvironment currentState, Moves nextMove, IEnvironment nextState)
+        public void SendResults(float reward, IEnvironmentState currentState, MoveResponse nextMove, IEnvironmentState nextState)
         {
-            var request = new RememberRequest{
-                Action = nextMove,
+            var request = new RememberRequest
+            {
+                Action = nextMove.Action,
                 Reward = reward,
                 Died = reward < 0.0,
+                DidBoost = nextMove.Boost,
             };
             request.CurrentImage.Add(currentState.ScreenState);
             request.NextImage.Add(nextState.ScreenState);
@@ -53,8 +47,8 @@ namespace Slither.Client
 
         public void StepUpdate(int step)
         {
-            client.StepUpdate(new StepRequest{TotalStep = step});
+            client.StepUpdate(new StepRequest { TotalStep = step });
         }
-    }
 
+    }
 }

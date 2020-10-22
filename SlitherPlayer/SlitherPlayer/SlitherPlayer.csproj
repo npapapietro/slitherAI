@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Moq" Version="4.14.7" />
+    <PackageReference Include="Selenium.WebDriver" Version="3.141.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.13.0" />
+    <PackageReference Include="Grpc" Version="2.31.0" />
+    <PackageReference Include="Microsoft.ML" Version="1.5.1" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.4.0" />
+    <PackageReference Include="Grpc.tools" Version="2.31.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.1" />
+    <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
+    <Protobuf Include="../Protos/RLRecords.proto" Link="RLRecords.proto" />
+    <Content Include="Program.cs" />
+    <Content Include="GRPC\Client.cs" />
+    <Content Include="GRPC\interface\IClient.cs" />
+    <Content Include="Environment\Coordinates.cs" />
+    <Content Include="Environment\interfaces\ICoordinates.cs" />
+    <Content Include="Environment\interfaces\IEnvironmentState.cs" />
+    <Content Include="Environment\interfaces\IEnvironment.cs" />
+    <Content Include="Environment\SlitherEnvironment.cs" />
+    <Content Include="Runtime.cs" />
+    <Content Include="ScreenCapture\ScreenCapture.cs" />
+    <Content Include="ScreenCapture\ScreenCaptureWindows.cs" />
+  </ItemGroup>
+</Project>

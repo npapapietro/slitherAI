@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=b'\252\002\rSlither.Proto',
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0fRLRecords.proto\"\x1c\n\x0bMoveRequest\x12\r\n\x05Image\x18\x01 \x03(\x02\"&\n\x0cMoveResponse\x12\x16\n\x06\x41\x63tion\x18\x01 \x01(\x0e\x32\x06.Moves\"p\n\x0fRememberRequest\x12\x14\n\x0c\x43urrentImage\x18\x01 \x03(\x02\x12\x11\n\tNextImage\x18\x02 \x03(\x02\x12\x16\n\x06\x41\x63tion\x18\x03 \x01(\x0e\x32\x06.Moves\x12\x0e\n\x06Reward\x18\x04 \x01(\x02\x12\x0c\n\x04\x44ied\x18\x05 \x01(\x08\" \n\x0bStepRequest\x12\x11\n\tTotalStep\x18\x01 \x01(\x05\"8\n\x0cResetRequest\x12\r\n\x05Score\x18\x01 \x01(\x02\x12\x0c\n\x04Step\x18\x02 \x01(\x05\x12\x0b\n\x03Run\x18\x03 \x01(\x05\"\t\n\x07Nothing*P\n\x05Moves\x12\x08\n\x04Left\x10\x00\x12\t\n\x05Right\x10\x01\x12\t\n\x05\x42oost\x10\x02\x12\r\n\tBoostLeft\x10\x03\x12\x0e\n\nBoostRight\x10\x04\x12\x08\n\x04Wait\x10\x05\x32\xa9\x01\n\x0eSlitherTrainer\x12\'\n\x08NextMove\x12\x0c.MoveRequest\x1a\r.MoveResponse\x12&\n\x08Remember\x12\x10.RememberRequest\x1a\x08.Nothing\x12$\n\nStepUpdate\x12\x0c.StepRequest\x1a\x08.Nothing\x12 \n\x05Reset\x12\r.ResetRequest\x1a\x08.NothingB\x10\xaa\x02\rSlither.Protob\x06proto3'
+  serialized_pb=b'\n\x0fRLRecords.proto\"\x1c\n\x0bMoveRequest\x12\r\n\x05Image\x18\x01 \x03(\x02\"5\n\x0cMoveResponse\x12\x16\n\x06\x41\x63tion\x18\x01 \x01(\x0e\x32\x06.Moves\x12\r\n\x05\x42oost\x18\x02 \x01(\x08\"\x82\x01\n\x0fRememberRequest\x12\x14\n\x0c\x43urrentImage\x18\x01 \x03(\x02\x12\x11\n\tNextImage\x18\x02 \x03(\x02\x12\x16\n\x06\x41\x63tion\x18\x03 \x01(\x0e\x32\x06.Moves\x12\x0e\n\x06Reward\x18\x04 \x01(\x02\x12\x10\n\x08\x44idBoost\x18\x05 \x01(\x08\x12\x0c\n\x04\x44ied\x18\x06 \x01(\x08\" \n\x0bStepRequest\x12\x11\n\tTotalStep\x18\x01 \x01(\x05\"8\n\x0cResetRequest\x12\r\n\x05Score\x18\x01 \x01(\x02\x12\x0c\n\x04Step\x18\x02 \x01(\x05\x12\x0b\n\x03Run\x18\x03 \x01(\x05\"\t\n\x07Nothing*f\n\x05Moves\x12\x07\n\x03Pi0\x10\x00\x12\t\n\x05Pi1_4\x10\x01\x12\t\n\x05Pi1_2\x10\x02\x12\t\n\x05Pi3_4\x10\x03\x12\x06\n\x02Pi\x10\x04\x12\t\n\x05Pi5_4\x10\x05\x12\t\n\x05Pi3_2\x10\x06\x12\t\n\x05Pi7_4\x10\x07\x12\n\n\x06NoMove\x10\x08\x32\xa9\x01\n\x0eSlitherTrainer\x12\'\n\x08NextMove\x12\x0c.MoveRequest\x1a\r.MoveResponse\x12&\n\x08Remember\x12\x10.RememberRequest\x1a\x08.Nothing\x12$\n\nStepUpdate\x12\x0c.StepRequest\x1a\x08.Nothing\x12 \n\x05Reset\x12\r.ResetRequest\x1a\x08.NothingB\x10\xaa\x02\rSlither.Protob\x06proto3'
 )
 
 _MOVES = _descriptor.EnumDescriptor(
@@ -31,50 +31,68 @@ _MOVES = _descriptor.EnumDescriptor(
   create_key=_descriptor._internal_create_key,
   values=[
     _descriptor.EnumValueDescriptor(
-      name='Left', index=0, number=0,
+      name='Pi0', index=0, number=0,
       serialized_options=None,
       type=None,
       create_key=_descriptor._internal_create_key),
     _descriptor.EnumValueDescriptor(
-      name='Right', index=1, number=1,
+      name='Pi1_4', index=1, number=1,
       serialized_options=None,
       type=None,
       create_key=_descriptor._internal_create_key),
     _descriptor.EnumValueDescriptor(
-      name='Boost', index=2, number=2,
+      name='Pi1_2', index=2, number=2,
       serialized_options=None,
       type=None,
       create_key=_descriptor._internal_create_key),
     _descriptor.EnumValueDescriptor(
-      name='BoostLeft', index=3, number=3,
+      name='Pi3_4', index=3, number=3,
       serialized_options=None,
       type=None,
       create_key=_descriptor._internal_create_key),
     _descriptor.EnumValueDescriptor(
-      name='BoostRight', index=4, number=4,
+      name='Pi', index=4, number=4,
       serialized_options=None,
       type=None,
       create_key=_descriptor._internal_create_key),
     _descriptor.EnumValueDescriptor(
-      name='Wait', index=5, number=5,
+      name='Pi5_4', index=5, number=5,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='Pi3_2', index=6, number=6,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='Pi7_4', index=7, number=7,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='NoMove', index=8, number=8,
       serialized_options=None,
       type=None,
       create_key=_descriptor._internal_create_key),
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=306,
-  serialized_end=386,
+  serialized_start=340,
+  serialized_end=442,
 )
 _sym_db.RegisterEnumDescriptor(_MOVES)
 
 Moves = enum_type_wrapper.EnumTypeWrapper(_MOVES)
-Left = 0
-Right = 1
-Boost = 2
-BoostLeft = 3
-BoostRight = 4
-Wait = 5
+Pi0 = 0
+Pi1_4 = 1
+Pi1_2 = 2
+Pi3_4 = 3
+Pi = 4
+Pi5_4 = 5
+Pi3_2 = 6
+Pi7_4 = 7
+NoMove = 8
 
 
 
@@ -125,6 +143,13 @@ _MOVERESPONSE = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='Boost', full_name='MoveResponse.Boost', index=1,
+      number=2, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -138,7 +163,7 @@ _MOVERESPONSE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=49,
-  serialized_end=87,
+  serialized_end=102,
 )
 
 
@@ -179,8 +204,15 @@ _REMEMBERREQUEST = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='Died', full_name='RememberRequest.Died', index=4,
+      name='DidBoost', full_name='RememberRequest.DidBoost', index=4,
       number=5, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='Died', full_name='RememberRequest.Died', index=5,
+      number=6, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -197,8 +229,8 @@ _REMEMBERREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=89,
-  serialized_end=201,
+  serialized_start=105,
+  serialized_end=235,
 )
 
 
@@ -229,8 +261,8 @@ _STEPREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=203,
-  serialized_end=235,
+  serialized_start=237,
+  serialized_end=269,
 )
 
 
@@ -275,8 +307,8 @@ _RESETREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=237,
-  serialized_end=293,
+  serialized_start=271,
+  serialized_end=327,
 )
 
 
@@ -300,8 +332,8 @@ _NOTHING = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=295,
-  serialized_end=304,
+  serialized_start=329,
+  serialized_end=338,
 )
 
 _MOVERESPONSE.fields_by_name['Action'].enum_type = _MOVES
@@ -367,8 +399,8 @@ _SLITHERTRAINER = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=389,
-  serialized_end=558,
+  serialized_start=445,
+  serialized_end=614,
   methods=[
   _descriptor.MethodDescriptor(
     name='NextMove',
