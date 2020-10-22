@@ -1,28 +1,11 @@
-using System;
 using OpenQA.Selenium;
-using Slither.ScreenCapture;
+using SlitherPlayer.ScreenCapture;
 
-namespace Slither.Environment
+namespace SlitherPlayer.Environment
 {
-    public interface IEnvironmentState
-    {
-        float[] ScreenState { get; }
-
-        int Length { get; }
-
-        bool Dead { get; }
-
-        /// <summary>
-        /// Unix epoch format
-        /// </summary>
-        /// <value></value>
-        int TimeStamp { get; }   
-
-    }
-
     public interface IEnvironment
     {
-        IEnvironmentState GetState(IWebDriver driver, ScreenStream stream, bool withWath=false);
+        IEnvironmentState GetState(IWebDriver driver, IScreenThread stream, bool withWath=false);
 
         bool GetSlitherLength(IWebDriver driver, out int length);
 

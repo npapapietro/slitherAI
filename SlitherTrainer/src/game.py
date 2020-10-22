@@ -2,9 +2,11 @@ from logging import FileHandler, Logger
 from os.path import abspath, dirname, isfile, join
 import numpy as np
 import random
-from enum import Enum
+from typing import Tuple
+import pickle
 
-from .models import RNN
+from .models import FFN
+from .proto import Moves
 
 WINDOW_SIZE = 10  # frame count
 FEATURE_SIZE = 2048
@@ -24,41 +26,67 @@ MODEL_PERSISTENCE_UPDATE_FREQUENCY = 10000
 REPLAY_START_SIZE = 50000
 
 
-class Moves(Enum):
-    Left = 0
-    Right = 1
-    Boost = 2
-    BoostLeft = 3
-    BoostRight = 4
-    Wait = 5
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
 
 
 class Trainer:
 
     def __init__(self):
         self.model_path = join(abspath(dirname(__file__)), 'logs')
+        self.N_moves = len(Moves.values())
+        self._weight_path = join(self.model_path, 'weights.h5')
+        self.datafile = join(self.model_path, 'data.p')
+
         self._setlogs()
 
-        self.movelist = [x.value for x in list(Moves)]
         self._load_models()
         self._reset()
 
         self.epsilon = EXPLORATION_MAX
         self.memory = []
 
-    def move(self, state: np.array) -> int:
-        if np.random.rand() < self.epsilon or len(self.memory) < WINDOW_SIZE:
-            return random.randrange(min(self.movelist), max(self.movelist))
+    def move(self, state: np.array) -> Tuple[int, bool]:
+        """State comes in and based on it and previous 9 states,
+        a prediction of a move and boost flag is made.
 
-        q_values = self.model.predict(
+        Args:
+            state (np.array): Shape of (2048) coming in from prefeaturized InceptionV3
+
+        Returns:
+            Tuple[int, bool]: Returns a integer corresponding to the proto Move enum and and bool flag if 
+            whether to initiate boost or not
+        """
+        if np.random.rand() < self.epsilon or len(self.memory) < REPLAY_START_SIZE:
+            return random.randrange(0, self.N_moves), bool(random.randrange(0, 2))
+
+        # back_9 = [x['currentImage'] for x in self.memory[-9:]]
+
+        # observation = np.array(back_9 + [state])
+
+        # assert observation.shape == (10, 2048), "Move observation shape mismatch"
+
+        [q_values, q_boost_values] = self.model.predict(
             np.expand_dims(state, axis=0), batch_size=1)
 
-        return np.argmax(q_values[0])
+        return int(np.argmax(q_values[0])), bool(np.argmax(q_boost_values[0]))
 
-    def reset(self, score, step, run):
+    def reset(self, score: float, step: int, run: int):
+        """Logs the current score, step count for said run and run count
+        then resets the models.
+        """
+        self.logger.info(
+            f"Reseting with score: {round(score,2)} step: {step} run: {run}"
+        )
         self._reset()
 
     def step_update(self, total_step):
+        """Based on the total steps in the entire game
+        it looks to make update, train, reset decisions based on
+        preconfigured options
+        """
         if total_step < REPLAY_START_SIZE:
             return
 
@@ -75,16 +103,30 @@ class Trainer:
             print('{{"metric": "epsilon", "value": {}}}'.format(self.epsilon))
             print('{{"metric": "total_step", "value": {}}}'.format(total_step))
 
-    def remember(self, currentImage, nextImage, action, reward, died):
+    def remember(self, currentImage: list, nextImage: list, action: Moves, reward: float, died: bool, didBoost: bool):
+        """Remembers the current state coming in from the player instance. If this memory stack 
+        is over 50 records, it pops first one and then adds to pickle file
+
+        Args:
+            currentImage (list): float[2048] coming in of featurized image
+            nextImage (list): float[2048] coming in of a featurized image
+            action (Moves): Move enum
+            reward (float): current reward value
+            died (bool): Died at this time
+            didBoost (bool): Used boost
+        """
         self.memory.append({
             'currentImage': np.array(currentImage),
             'nextImage': np.array(nextImage),
             'action': action,
+            "didBoost": int(didBoost),
             'reward': reward,
             'died': died
         })
         if len(self.memory) > MEMORY_SIZE:
-            self.memory.pop(0)
+            record = self.memory.pop(0)
+            with open(self.datafile, 'a+') as f:
+                pickle.dump(record, f)
 
     def _train(self):
         batch = random.sample(self.memory, BATCH_SIZE)
@@ -94,36 +136,55 @@ class Trainer:
         current_states = []
         q_values = []
         max_q_values = []
+        boost_q_values = []
+        max_boost_q_values = []
 
         for entry in batch:
             current_state = np.expand_dims(entry["currentImage"], axis=0)
             current_states.append(current_state)
 
             next_state = np.expand_dims(np.array(entry["nextImage"]), axis=0)
-            next_state_prediction = self.model_target.predict(
-                next_state).ravel()
+            [next_state_prediction, is_boost] = self.model_target.predict(
+                next_state)
 
-            next_q_value = np.max(next_state_prediction)
-            q = list(self.model.predict(current_state)[0])
+            next_q_value = np.max(next_state_prediction.ravel())
+            next_boost_q_value = np.max(is_boost.ravel())
+
+            [q, bq] = self.model.predict(current_state)
+
+            q = list(q[0])
+            bq = list(bq[0])
 
             if entry["died"]:
                 q[entry["action"]] = entry["reward"]
+                bq[entry["didBoost"]] = entry["reward"]
             else:
                 q[entry["action"]] = entry["reward"] + GAMMA * next_q_value
+                bq[entry["didBoost"]] = entry["reward"] + \
+                    GAMMA * next_boost_q_value
+
             q_values.append(q)
+            boost_q_values.append(bq)
+
             max_q_values.append(np.max(q))
+            max_boost_q_values.append(np.max(bq))
+
+        X = np.array(current_states).squeeze()
+        y = [np.array(q_values).squeeze(), np.array(
+            max_boost_q_values).squeeze()]
 
         fit = self.model.fit(
-            np.array(current_states).squeeze(),
-            np.array(q_values).squeeze(),
+            X, y,
             batch_size=BATCH_SIZE,
-            verbose=0)
-
+            verbose=0
+        )
         loss = fit.history["loss"][0]
-        acc = fit.history["acc"][0]
+        macc = fit.history["move_accuracy"][0]
+        bacc = fit.history["boost_accuracy"][0]
         self.logger.info(f"Loss {round(loss,2)}")
-        self.logger.info(f"Acc {round(acc,2)}")
-        self.logger.info(f"Mean Q {round(np.mean(max_q_values),2)}")
+        self.logger.info(f"Acc move: {round(macc,2)} bacc: {round(bacc,2)}")
+        self.logger.info(
+            f"Mean mQ: {round(np.mean(max_q_values),2)} Mean bQ: {round(np.mean(max_boost_q_values),2)}")
 
     def _setlogs(self):
         self.logger = Logger("TrainerLogs")
@@ -139,15 +200,14 @@ class Trainer:
         self.model_target.set_weights(self.model.get_weights())
 
     def _save_model(self):
-        self.model.save_weights()
+        self.model.save_weights(self._weight_path)
 
     def _load_models(self):
-        self.model = RNN(input_shape=(
-            WINDOW_SIZE, FEATURE_SIZE), moves=max(self.movelist))
-        self.model_weights = join(self.model_path, 'weights.h5')
+        self.model = FFN(input_shape=(
+            FEATURE_SIZE,), moves=self.N_moves)
 
-        if isfile(self.model_weights):
-            self.model.load_weights(self.model_weights)
+        if isfile(self._weight_path):
+            self.model.load_weights(self._weight_path)
 
-        self.model_target = RNN(input_shape=(
-            WINDOW_SIZE, FEATURE_SIZE), moves=max(self.movelist))
+        self.model_target = FFN(input_shape=(
+            FEATURE_SIZE,), moves=self.N_moves)

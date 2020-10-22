@@ -1,14 +1,18 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
 
-namespace Slither.Utils
+namespace SlitherPlayer
 {
-    public static class Utils
-    {        
+    public static class PlayerUtilities
+    {
+     
         public static int ToEpoch(this DateTime time)
         {
             var t = time - new DateTime(1970, 1, 1);
             return (int)t.TotalSeconds;
         }
 
+        
     }
 }

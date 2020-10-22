@@ -24,9 +24,9 @@ class Service(SlitherTrainerServicer):
 
     def NextMove(self, request: MoveRequest, context: ServicerContext) -> MoveResponse:
         img = np.array(request.Image)
-        move = self.trainer.move(img)
-        print("NextMove",move)
-        return MoveResponse(Action=Moves.Name(move))
+        move, boost = self.trainer.move(img)
+        print("NextMove",move, "with boost?", boost)
+        return MoveResponse(Action=Moves.Name(move), Boost=boost)
 
     def Remember(self, request: RememberRequest, context: ServicerContext) -> Nothing:
         self.trainer.remember(
@@ -34,7 +34,8 @@ class Service(SlitherTrainerServicer):
             request.NextImage,
             request.Action,
             request.Reward,
-            request.Died
+            request.Died,
+            request.DidBoost
         )
         print("Remember")
         return Nothing()

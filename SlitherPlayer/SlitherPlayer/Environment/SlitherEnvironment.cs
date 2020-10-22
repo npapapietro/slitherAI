@@ -1,19 +1,13 @@
-using System;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading;
 using OpenQA.Selenium;
-using OpenQA.Selenium.Support.UI;
-using Slither.Models;
-using Slither.Runtime;
-using Slither.ScreenCapture;
-using Slither.Utils;
+using SlitherPlayer.ScreenCapture;
+using System;
+using System.Threading;
 
-namespace Slither.Environment
+namespace SlitherPlayer.Environment
 {
-    public class Environment : IEnvironment
+    public class SlitherEnvironment: IEnvironment
     {
-        private class EnvironmentState : IEnvironmentState
+        private class EnvironmentState: IEnvironmentState
         {
             public float[] ScreenState { get; set; }
 
@@ -24,11 +18,13 @@ namespace Slither.Environment
             public int TimeStamp { get; set; }
 
         }
-        public IEnvironmentState GetState(IWebDriver driver, ScreenStream stream, bool withWait = false)
+
+        public IEnvironmentState GetState(IWebDriver driver, IScreenThread stream, bool withWait = false)
         {
 
             Thread.Sleep(withWait ? 1000 : 0);
 
+            
             if (!GetSlitherLength(driver, out var length))
             {
                 length = 0;
@@ -37,14 +33,15 @@ namespace Slither.Environment
             var playbuttonDisplayed = GetPlayButton(driver, out var playbutton) && (playbutton?.Displayed ?? false);
 
             var TimeStamp = DateTime.UtcNow.ToEpoch();
+            
 
             return new EnvironmentState
             {
                 TimeStamp = TimeStamp,
                 Length = length,
-                Dead = length <= 0 || playbuttonDisplayed,
-                ScreenState = stream.ClosestImage(TimeStamp)
-            } as IEnvironmentState;
+                Dead = playbuttonDisplayed,
+                ScreenState = stream.ClosestScreen(TimeStamp)
+            };
 
         }
 
@@ -54,7 +51,7 @@ namespace Slither.Environment
             try
             {
                 var lengthElment = driver.FindElement(By.XPath(@"//*[contains(.,'Your length')]/span[2]"));
-                return Int32.TryParse(lengthElment.Text, out length);
+                return int.TryParse(lengthElment.Text, out length);
             }
             catch (Exception e)
             {
@@ -80,12 +77,12 @@ namespace Slither.Environment
 
         public bool GetPlayButton(IWebDriver driver)
         {
-            return this.GetPlayButton(driver, out _);
+            return GetPlayButton(driver, out _);
         }
 
         public bool GetCenter(IWebDriver driver, out int x, out int y)
         {
-            (x,y) = (0, 0);
+            (x, y) = (0, 0);
             try
             {
                 var canvas = driver.FindElement(By.XPath(@"//canvas[@class='nsi' and @width > 500]"));
@@ -99,6 +96,5 @@ namespace Slither.Environment
             }
             return false;
         }
-
     }
 }
