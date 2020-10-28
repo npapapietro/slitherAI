@@ -195,10 +195,14 @@ class Trainer:
             f"Mean mQ: {round(np.mean(max_q_values),2)} Mean bQ: {round(np.mean(max_boost_q_values),2)}")
 
     def _setlogs(self):
-        self.logger = Logger("TrainerLogs")
-        self.logger.addHandler(FileHandler(
-            join(self.model_path, "trainer.log")))
-        self.logger.info("Logger initialized")
+        try:
+            self.logger = Logger("TrainerLogs")
+            self.logger.addHandler(FileHandler(
+                join(self.model_path, "trainer.log")))
+            self.logger.info("Logger initialized")
+        except FileNotFoundError:
+            # probably here from unit tests
+            pass
 
     def _update_epsilon(self):
         self.epsilon -= EXPLORATION_DECAY

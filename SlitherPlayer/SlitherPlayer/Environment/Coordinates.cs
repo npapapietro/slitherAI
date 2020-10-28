@@ -23,7 +23,7 @@ namespace SlitherPlayer.Environment
         public Coordinates(int R = 100)
         {
             // Since N_slices includes DoNothing, we don't need to +1 to make it inclusive range
-            var angles = Enumerable.Range(0, N_slices).Select(t => (double)t /(N_slices - 1));
+            var angles = Enumerable.Range(0, N_slices).Select(t => (double)t / (N_slices - 1));
             PositionMapping = angles.Select(theta =>
             {
                 //var theta = (double)t / N_slices;
