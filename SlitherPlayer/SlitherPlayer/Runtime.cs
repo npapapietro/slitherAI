@@ -146,7 +146,7 @@ namespace SlitherPlayer
 
                     client.StepUpdate(totalSteps);
 
-                    if (reward < 0)
+                    if (reward <= 0.0f)
                     {
                         if (RuntimeConfigurations.Verbose) Console.WriteLine("Died, sending results");
                         client.SendReset(score, step, runCount);
@@ -154,9 +154,6 @@ namespace SlitherPlayer
                     }
                 }
             }
-
-
-
         }
 
         float AssesReward(IEnvironmentState currentState, out IEnvironmentState nextState)
@@ -166,11 +163,11 @@ namespace SlitherPlayer
 
             if (nextState.Dead)
             {
-                return -1.0f;
+                return 0.0f;
             }
             else if (nextState.Length > currentState.Length)
             {
-                return 2.0f;
+                return 100.0f;
             }
 
             return 1.0f;

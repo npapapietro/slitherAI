@@ -4,6 +4,8 @@ using Moq;
 using OpenQA.Selenium;
 using System.Drawing;
 using SlitherPlayer.Environment;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace SlitherPlayer.Tests
 {
@@ -24,6 +26,24 @@ namespace SlitherPlayer.Tests
             Assert.Equal(25, x);
             Assert.Equal(25, y);
 
+        }
+
+        [Fact]
+        public void TestCoordinates()
+        {
+            int R = 100;
+            int n = 4;
+            var coord = new Coordinates(n, R);
+
+           
+            var angles = new double[] { 0, Math.PI / 2, Math.PI,  3 * Math.PI / 2};
+            var xy = new List<(int, int)>();
+            foreach(var t in angles)
+            {
+                xy.Add((Convert.ToInt32(Math.Cos(t) * R), - Convert.ToInt32(Math.Sin(t) * R)));
+            }
+
+            Assert.True(xy.All(coord.PositionMapping.Contains));
         }
     }
 }

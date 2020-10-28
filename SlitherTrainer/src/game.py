@@ -115,18 +115,26 @@ class Trainer:
             died (bool): Died at this time
             didBoost (bool): Used boost
         """
-        self.memory.append({
+        record = {
             'currentImage': np.array(currentImage),
             'nextImage': np.array(nextImage),
             'action': action,
             "didBoost": int(didBoost),
             'reward': reward,
             'died': died
-        })
-        if len(self.memory) > MEMORY_SIZE:
-            record = self.memory.pop(0)
-            with open(self.datafile, 'a+') as f:
+        }
+
+        self.memory.append(record)
+        
+        try:
+            with open(self.datafile, 'ab') as f:
                 pickle.dump(record, f)
+        except Exception as e:
+            print(e)
+
+        if len(self.memory) > MEMORY_SIZE:
+            self.memory.pop(0)
+        
 
     def _train(self):
         batch = random.sample(self.memory, BATCH_SIZE)
