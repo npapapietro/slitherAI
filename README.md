@@ -1,8 +1,8 @@
 # Playing Slither.io with Reinforcement Learning
 
-![SlitherTrainer unit tests](https://github.com/npapapietro/slitherAI/workflows/SlitherTrainer%20unit%20tests/badge.svg)
+![SlitherTrainer unit tests](https://github.com/npapapietro/slitherAI/workflows/SlitherTrainer%20unit%20tests/badge.svg) ![SlitherPlayer unit tests](https://github.com/npapapietro/slitherAI/workflows/SlitherPlayer%20unit%20tests/badge.svg)
 
-![SlitherPlayer unit tests](https://github.com/npapapietro/slitherAI/workflows/SlitherPlayer%20unit%20tests/badge.svg)
+This is a fun project to showcase some fun RL learning on a simple to play webgame.
 
 ## Components
 
