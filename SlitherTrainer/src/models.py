@@ -1,3 +1,4 @@
+import os
 from tensorflow.keras.applications.resnet50 import ResNet50
 import tensorflow as tf
 from tensorflow.keras.models import Model
@@ -8,12 +9,14 @@ from tensorflow.keras import backend as K
 
 
 def export():
+    """Exports ResNet50 to onnx format file
+    """
     K.set_image_data_format('channels_first')
     model = ResNet50(include_top=False, weights='imagenet', input_shape=(3, 299, 299), pooling="max") # (2048,)
     
     onnx_model = keras2onnx.convert_keras(model, model.name)
-
-    with open("ResNet50.onnx", 'wb') as f:
+    MODEL_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__),"..", "..", "data", "ResNet50.onnx"))
+    with open(MODEL_PATH, 'wb') as f:
         f.write(onnx_model.SerializeToString())
 
 def FFN(input_shape, moves, summary=False):
@@ -34,6 +37,3 @@ def FFN(input_shape, moves, summary=False):
         model.summary()
     
     return model
-
-if __name__ == "__main__":
-    FFN((2048,), 8, True)
