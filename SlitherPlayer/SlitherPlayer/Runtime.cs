@@ -8,6 +8,7 @@ using SlitherPlayer.Environment;
 using SlitherPlayer.GRPC;
 using SlitherPlayer.ScreenCapture;
 using System;
+using System.IO;
 using System.Threading;
 
 namespace SlitherPlayer
@@ -217,7 +218,7 @@ namespace SlitherPlayer
     public static class RuntimeConfigurations
     {
         public static string Channel = "localhost:50051";
-        public static string ModelFile = @"C:\Users\Nate-PC\Documents\git\Slither\ResNet50.onnx";
+        public static string ModelFile = Path.Join(Directory.GetCurrentDirectory(), "..", "..", "data", "ResNet50.onnx");
         public static string[] Options = {
                 "--window-size=1000x1000",
                 // "--headless"
@@ -226,7 +227,6 @@ namespace SlitherPlayer
         public static int RunLimit = int.MaxValue;
         public static bool TestSelect = false;
         public static bool Verbose = true;
-
     }
     #endregion
 }

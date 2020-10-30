@@ -1,16 +1,18 @@
 import argparse
+from argparse import ArgumentError
+import os
+from os.path import dirname, realpath
 
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--rebuild", action="store_true", help="Rebuilds the python proto generation files")
 parser.add_argument("--server", action="store_true", help="Starts the grpc server")
-
+parser.add_argument("--export", action="store_true", help="Exports the CNN image featurizer")
 
 def update_protos():
     from grpc_tools import protoc
     import pkg_resources
-    import os
     import sys
     import glob
     import re
@@ -50,11 +52,30 @@ def run_server():
     from . import serve
     serve()
 
+def run_export():
+    from .models import export
+    export()
+
 if __name__ == "__main__":
+    DATADIR = os.path.abspath(os.path.join(os.path.dirname(__file__),'..','..','data'))
+    LOGDIR = os.path.join(DATADIR,'logs')
+    if not os.path.isdir(DATADIR):
+        os.mkdir(DATADIR)
+        os.mkdir(LOGDIR)
+    elif not os.path.isdir(LOGDIR):
+        os.mkdir(LOGDIR)
+
+
     args = parser.parse_args()
+
+    if sum([int(args.rebuild), int(args.server), int(args.export)]) != 1:
+        raise ArgumentError("SlitherTrainer can only be ran with one flag")
 
     if args.rebuild:
         update_protos()
 
-    if args.server:
+    elif args.server:
         run_server()
+
+    elif args.export:
+        run_export()

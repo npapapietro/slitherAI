@@ -35,10 +35,11 @@ def chunks(lst, n):
 class Trainer:
 
     def __init__(self):
-        self.model_path = join(abspath(dirname(__file__)), 'logs')
+        self.model_path = join(abspath(dirname(__file__)),'..',"..","data")
+        self.log_path = join(self.model_path, "logs")
         self.N_moves = len(Moves.values())
         self._weight_path = join(self.model_path, 'weights.h5')
-        self.datafile = join(self.model_path, 'data.p')
+        self.datafile = join(self.log_path, 'data.p')
 
         self._setlogs()
 
@@ -198,7 +199,7 @@ class Trainer:
         self.logger = Logger("TrainerLogs")
         try:
             self.logger.addHandler(FileHandler(
-                join(self.model_path, "trainer.log")))            
+                join(self.log_path, "trainer.log")))            
         except FileNotFoundError:
             # probably here from unit tests
             pass
