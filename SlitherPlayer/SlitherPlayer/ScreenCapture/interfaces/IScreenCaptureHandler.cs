@@ -9,7 +9,7 @@ namespace SlitherPlayer.ScreenCapture
     public interface IScreenCaptureHandler
     {
         /// <summary>
-        /// Screen shots the web browser launched by selenium and crops it a bit
+        /// Gets the screen of the browser
         /// </summary>
         /// <param name="img">Out variable of screen shot</param>
         /// <returns>If screen shot was successful</returns>

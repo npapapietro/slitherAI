@@ -3,14 +3,16 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Support.UI;
+using SlitherPlayer.Logger;
 using Slither.Proto;
 using SlitherPlayer.Environment;
 using SlitherPlayer.GRPC;
 using SlitherPlayer.ScreenCapture;
 using System;
-using System.IO;
+using SlitherPlayer;
 using System.Threading;
 
+using LogLevel = SlitherPlayer.Logger.LogLevel;
 namespace SlitherPlayer
 {
     public class Runtime : IDisposable
@@ -34,11 +36,11 @@ namespace SlitherPlayer
 
         public Runtime()
         {
-            driver = ConfigureDriver();
-            client = ConfigureClient();
-            screenStream = ConfigureThread();
-            environment = ConfigureEnvmnt();
-            coordinates = ConfigureCoords();
+            driver          = ConfigureDriver();
+            client          = ConfigureClient();
+            screenStream    = ConfigureThread();
+            environment     = ConfigureEnvmnt();
+            coordinates     = ConfigureCoords();
         }
 
         public void Run()
@@ -55,9 +57,8 @@ namespace SlitherPlayer
         private IWebDriver ConfigureDriver()
         {
             var options = new ChromeOptions();
-            options.SetLoggingPreference(LogType.Client, LogLevel.Off);
 
-            foreach (var opt in RuntimeConfigurations.Options)
+            foreach (var opt in Configurations.Options)
             {
                 options.AddArgument(opt);
             }
@@ -67,7 +68,7 @@ namespace SlitherPlayer
 
         private IClient ConfigureClient()
         {
-            var channel = new Channel(RuntimeConfigurations.Channel, ChannelCredentials.Insecure);
+            var channel = new Channel(Configurations.Channel, ChannelCredentials.Insecure);
 
             return new Client(channel);
         }
@@ -90,88 +91,112 @@ namespace SlitherPlayer
         private void MainLoop()
         {
             WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(5));
+
+            PlayerLogger.Info("Navigating to website.");
             driver.Navigate().GoToUrl("http://slither.io");
-            
-            wait.Until(environment.GetPlayButton);
-            screenStream.Run(3);
-
-            int totalSteps = 0;
-            int runCount = 0;
-
-            while (true)
+            try
             {
-                if (runCount >= RuntimeConfigurations.RunLimit) return;
+                wait.Until(environment.GetPlayButton);
+                screenStream.Run(3);
 
-                try
-                {
-                    IWebElement playButton;
-                    while(!environment.GetPlayButton(driver, out playButton)){}
-                    Reset(playButton);
-
-                    if (RuntimeConfigurations.Verbose) Console.WriteLine("Entering Game");
-                }
-                catch (ElementClickInterceptedException)
-                {
-                    if (RuntimeConfigurations.Verbose) Console.WriteLine("Element Click intercepted, proceeding");
-                }
-                catch (Exception e)
-                {
-                    if (RuntimeConfigurations.Verbose) Console.WriteLine("Can't find or click play button " + e.Message);
-
-                    // Unhandled error
-                    throw;
-                }
-
-                var currentState = CurrentState(true);
-                runCount++;
-                int step = 0;
-                float score = 0;
-
-                if (RuntimeConfigurations.Verbose) Console.WriteLine($"Beginning run: {runCount}");
+                int totalSteps = 0;
+                int runCount = 0;
 
                 while (true)
                 {
-                    if (totalSteps >= RuntimeConfigurations.StepLimit) return;
+                    if (runCount >= Configurations.RunLimit) return;
 
-                    step++;
-                    totalSteps++;
-
-                    var nextMove = client.GetNextMove(currentState);
-                    PerformAction(nextMove);
-
-                    var reward = AssesReward(currentState, out var nextState);
-                    score += reward;
-
-                    client.SendResults(reward, currentState, nextMove, nextState);
-                    currentState = nextState;
-
-                    client.StepUpdate(totalSteps);
-
-                    if (reward <= 0.0f)
+                    try
                     {
-                        if (RuntimeConfigurations.Verbose) Console.WriteLine("Died, sending results");
-                        client.SendReset(score, step, runCount);
-                        break;
+                        IWebElement playButton;
+                        while (!environment.GetPlayButton(driver, out playButton)) { }
+                        Reset(playButton);
+
+                        PlayerLogger.Info("Entering Game");
+                    }
+                    catch (ElementClickInterceptedException)
+                    {
+                        PlayerLogger.HandledError("Element Click intercepted, proceeding");
+                    }
+                    catch (ElementNotInteractableException)
+                    {
+                        PlayerLogger.HandledError("Element Click not interactable, waiting");
+                        Thread.Sleep(2);
+                        continue;
+                    }
+                    catch (Exception e)
+                    {
+                        PlayerLogger.Error("Can't find or click play button " + e.Message);
+                        throw;
+                    }
+
+                    PlayerLogger.Info("Getting current state.");
+                    var currentState = CurrentState(true);
+                    runCount++;
+                    int step = 0;
+                    float score = 0;
+
+                    PlayerLogger.Info($"Beginning run: {runCount}");
+
+                    while (true)
+                    {
+                        if (totalSteps >= Configurations.StepLimit)
+                        {
+                            PlayerLogger.Info("Over step limit.");
+                            return;
+                        }
+
+                        step++;
+                        totalSteps++;
+
+                        PlayerLogger.Info("Getting next move.");
+                        var nextMove = client.GetNextMove(currentState);
+
+                        PlayerLogger.Info("Performing next move.");
+                        PerformAction(nextMove);
+
+                        PlayerLogger.Info("Access reward.");
+                        var reward = AccessReward(currentState, out var nextState);
+                        score += reward;
+
+                        PlayerLogger.Info("Sending results.");
+                        client.SendResults(reward, currentState, nextMove, nextState);
+                        currentState = nextState;
+
+                        PlayerLogger.Info("Sending results.");
+                        client.StepUpdate(totalSteps);
+
+                        if (currentState.Dead)
+                        {
+                            PlayerLogger.Info("Died, sending results");
+                            client.SendReset(score, step, runCount);
+                            break;
+                        }
                     }
                 }
             }
+            catch (Exception e)
+            {
+                PlayerLogger.Error("Main loop unhandled: " + e.Message);
+                driver.Dispose();
+                return;
+
+            }
         }
 
-        float AssesReward(IEnvironmentState currentState, out IEnvironmentState nextState)
+        float AccessReward(IEnvironmentState currentState, out IEnvironmentState nextState)
         {
-            
+
             nextState = CurrentState();
 
             if (nextState.Dead)
             {
-                return 0.0f;
-            }
-            else if (nextState.Length > currentState.Length)
-            {
-                return 100.0f;
+                return 0;
             }
 
-            return 1.0f;
+            var lengthDiff = nextState.Length - currentState.Length;
+
+            return lengthDiff;
 
         }
 
@@ -198,35 +223,16 @@ namespace SlitherPlayer
             {
                 var (x, y) = coordinates.PositionMapping[(int)nextMove.Action];
 
-                if (RuntimeConfigurations.Verbose)
-                    Console.WriteLine($"Moving from ({elm.Location.X}, {elm.Location.Y}) ==> ({x},{y}) with angle {nextMove.Action}" + (nextMove.Boost ? " with boost" : ""));
+                PlayerLogger.Info($"Moving from ({elm.Location.X}, {elm.Location.Y}) ==> ({x},{y}) with angle {nextMove.Action}" + (nextMove.Boost ? " with boost" : ""));
 
                 action = action.MoveToElement(elm).MoveByOffset(x, y);
             }
 
             if (nextMove.Boost) action = action.Release();
-            
+
             action.Build().Perform();
 
         }
     }
 
-    #region Configurations
-    /// <summary>
-    /// Inline the config for now, move to a toml shared by python and c# later
-    /// </summary>
-    public static class RuntimeConfigurations
-    {
-        public static string Channel = "localhost:50051";
-        public static string ModelFile = Path.Join(Directory.GetCurrentDirectory(), "..", "..", "data", "ResNet50.onnx");
-        public static string[] Options = {
-                "--window-size=1000x1000",
-                // "--headless"
-            };
-        public static int StepLimit = 5000000;
-        public static int RunLimit = int.MaxValue;
-        public static bool TestSelect = false;
-        public static bool Verbose = true;
-    }
-    #endregion
 }

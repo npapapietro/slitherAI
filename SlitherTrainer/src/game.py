@@ -4,6 +4,8 @@ import numpy as np
 import random
 from typing import Tuple
 import pickle
+import h5py
+from tqdm import tqdm
 
 from .models import FFN
 from .proto import Moves
@@ -20,7 +22,7 @@ EXPLORATION_DECAY = (EXPLORATION_MAX-EXPLORATION_MIN)/EXPLORATION_STEPS
 
 
 GAMMA = 0.99
-TRAINING_FREQUENCY = 4
+TRAINING_FREQUENCY = 2048
 TARGET_NETWORK_UPDATE_FREQUENCY = 40000
 MODEL_PERSISTENCE_UPDATE_FREQUENCY = 10000
 REPLAY_START_SIZE = 50000
@@ -48,6 +50,26 @@ class Trainer:
 
         self.epsilon = EXPLORATION_MAX
         self.memory = []
+    
+    @classmethod
+    def train(cls):
+        obj = cls()
+        
+        with h5py.File(obj.log_path + '/preprocessed.h5','r') as hf:
+            nextImages = hf['nextImage'][...]
+            currentImages = hf['currentImage'][...]
+            metadata = hf['metadata'][...]
+
+        obj.memory= [{ 
+            "currentImage": ci,
+            "nextImage": ni,
+            "action": int(md[0]),
+            "reward": md[1],
+            "died": int(md[2]),
+            "didBoost": int(md[3])} for ni, ci, md in zip(nextImages, currentImages, metadata)]
+        
+        obj._train()
+        obj._save_model()
 
     def move(self, state: np.array) -> Tuple[int, bool]:
         """State comes in and based on it and previous 9 states,
@@ -104,11 +126,12 @@ class Trainer:
             print('{{"metric": "epsilon", "value": {}}}'.format(self.epsilon))
             print('{{"metric": "total_step", "value": {}}}'.format(total_step))
 
-    def remember(self, currentImage: list, nextImage: list, action: Moves, reward: float, died: bool, didBoost: bool):
+    def remember(self, id: str, currentImage: list, nextImage: list, action: Moves, reward: float, died: bool, didBoost: bool):
         """Remembers the current state coming in from the player instance. If this memory stack 
         is over 50 records, it pops first one and then adds to pickle file
 
         Args:
+            id (str): UUID of image saved in logs folder
             currentImage (list): float[2048] coming in of featurized image
             nextImage (list): float[2048] coming in of a featurized image
             action (Moves): Move enum
@@ -122,7 +145,8 @@ class Trainer:
             'action': action,
             "didBoost": int(didBoost),
             'reward': reward,
-            'died': died
+            'died': died,
+            'id': id.encode(),
         }
 
         self.memory.append(record)
@@ -148,7 +172,7 @@ class Trainer:
         boost_q_values = []
         max_boost_q_values = []
 
-        for entry in batch:
+        for entry in tqdm(batch):
             current_state = np.expand_dims(entry["currentImage"], axis=0)
             current_states.append(current_state)
 
@@ -163,6 +187,8 @@ class Trainer:
 
             q = list(q[0])
             bq = list(bq[0])
+
+            # print(entry)
 
             if entry["died"]:
                 q[entry["action"]] = entry["reward"]
@@ -221,6 +247,8 @@ class Trainer:
 
         if isfile(self._weight_path):
             self.model.load_weights(self._weight_path)
+            self.logger.info("Weights loaded")
+
 
         self.model_target = FFN(input_shape=(
             FEATURE_SIZE,), moves=self.N_moves)

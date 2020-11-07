@@ -38,6 +38,7 @@ namespace SlitherPlayer.GRPC
                 Reward = reward,
                 Died = reward < 0.0,
                 DidBoost = nextMove.Boost,
+                Guid = currentState.Id.ToString()
             };
             request.CurrentImage.Add(currentState.ScreenState);
             request.NextImage.Add(nextState.ScreenState);

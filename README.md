@@ -22,7 +22,7 @@ Runs a gRPC server and holds the deep learning models that make the moves.
 ## Running
 
 
-* Navigate to the SlitherTrainer directory and run `python -m src --server`
+* Run `python -m SlitherTrainer --server`
 * Navigate to the SlitherPlayer directory and run `dotnet run` 
 * Watch it play
 Note: Because of how dotnet runs, C\# is setup to run from `dotnet run` not from an executable at the moment

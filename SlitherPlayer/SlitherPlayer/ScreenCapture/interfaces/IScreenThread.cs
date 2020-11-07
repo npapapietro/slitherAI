@@ -9,12 +9,14 @@ namespace SlitherPlayer.ScreenCapture
         int Epoch { get; set; }
 
         byte[] RawData {get; set;}
+
+        Guid Id {get; set;}
     }
 
     public interface IScreenThread: IDisposable
     {
         void Run(int threadCount = 1);
 
-        float[] ClosestScreen(int epoch);
+        (float[], Guid) ClosestScreen(int epoch);
     }
 }

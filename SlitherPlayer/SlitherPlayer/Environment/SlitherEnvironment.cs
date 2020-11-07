@@ -17,6 +17,8 @@ namespace SlitherPlayer.Environment
 
             public int TimeStamp { get; set; }
 
+            public Guid Id {get; set;}
+
         }
 
         public IEnvironmentState GetState(IWebDriver driver, IScreenThread stream, bool withWait = false)
@@ -27,20 +29,22 @@ namespace SlitherPlayer.Environment
             
             if (!GetSlitherLength(driver, out var length))
             {
-                length = 0;
+                length = 10;
             }
 
             var playbuttonDisplayed = GetPlayButton(driver, out var playbutton) && (playbutton?.Displayed ?? false);
 
             var TimeStamp = DateTime.UtcNow.ToEpoch();
             
+            var (screen, id) = stream.ClosestScreen(TimeStamp);
 
             return new EnvironmentState
             {
                 TimeStamp = TimeStamp,
                 Length = length,
                 Dead = playbuttonDisplayed,
-                ScreenState = stream.ClosestScreen(TimeStamp)
+                ScreenState = screen,
+                Id = id
             };
 
         }

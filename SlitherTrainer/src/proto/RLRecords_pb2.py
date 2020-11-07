@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=b'\252\002\rSlither.Proto',
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0fRLRecords.proto\"\x1c\n\x0bMoveRequest\x12\r\n\x05Image\x18\x01 \x03(\x02\"5\n\x0cMoveResponse\x12\x16\n\x06\x41\x63tion\x18\x01 \x01(\x0e\x32\x06.Moves\x12\r\n\x05\x42oost\x18\x02 \x01(\x08\"\x82\x01\n\x0fRememberRequest\x12\x14\n\x0c\x43urrentImage\x18\x01 \x03(\x02\x12\x11\n\tNextImage\x18\x02 \x03(\x02\x12\x16\n\x06\x41\x63tion\x18\x03 \x01(\x0e\x32\x06.Moves\x12\x0e\n\x06Reward\x18\x04 \x01(\x02\x12\x10\n\x08\x44idBoost\x18\x05 \x01(\x08\x12\x0c\n\x04\x44ied\x18\x06 \x01(\x08\" \n\x0bStepRequest\x12\x11\n\tTotalStep\x18\x01 \x01(\x05\"8\n\x0cResetRequest\x12\r\n\x05Score\x18\x01 \x01(\x02\x12\x0c\n\x04Step\x18\x02 \x01(\x05\x12\x0b\n\x03Run\x18\x03 \x01(\x05\"\t\n\x07Nothing*f\n\x05Moves\x12\x07\n\x03Pi0\x10\x00\x12\t\n\x05Pi1_4\x10\x01\x12\t\n\x05Pi1_2\x10\x02\x12\t\n\x05Pi3_4\x10\x03\x12\x06\n\x02Pi\x10\x04\x12\t\n\x05Pi5_4\x10\x05\x12\t\n\x05Pi3_2\x10\x06\x12\t\n\x05Pi7_4\x10\x07\x12\n\n\x06NoMove\x10\x08\x32\xa9\x01\n\x0eSlitherTrainer\x12\'\n\x08NextMove\x12\x0c.MoveRequest\x1a\r.MoveResponse\x12&\n\x08Remember\x12\x10.RememberRequest\x1a\x08.Nothing\x12$\n\nStepUpdate\x12\x0c.StepRequest\x1a\x08.Nothing\x12 \n\x05Reset\x12\r.ResetRequest\x1a\x08.NothingB\x10\xaa\x02\rSlither.Protob\x06proto3'
+  serialized_pb=b'\n\x0fRLRecords.proto\"\x1c\n\x0bMoveRequest\x12\r\n\x05Image\x18\x01 \x03(\x02\"5\n\x0cMoveResponse\x12\x16\n\x06\x41\x63tion\x18\x01 \x01(\x0e\x32\x06.Moves\x12\r\n\x05\x42oost\x18\x02 \x01(\x08\"\x90\x01\n\x0fRememberRequest\x12\x14\n\x0c\x43urrentImage\x18\x01 \x03(\x02\x12\x11\n\tNextImage\x18\x02 \x03(\x02\x12\x16\n\x06\x41\x63tion\x18\x03 \x01(\x0e\x32\x06.Moves\x12\x0e\n\x06Reward\x18\x04 \x01(\x02\x12\x10\n\x08\x44idBoost\x18\x05 \x01(\x08\x12\x0c\n\x04\x44ied\x18\x06 \x01(\x08\x12\x0c\n\x04Guid\x18\x07 \x01(\t\" \n\x0bStepRequest\x12\x11\n\tTotalStep\x18\x01 \x01(\x05\"8\n\x0cResetRequest\x12\r\n\x05Score\x18\x01 \x01(\x02\x12\x0c\n\x04Step\x18\x02 \x01(\x05\x12\x0b\n\x03Run\x18\x03 \x01(\x05\"\t\n\x07Nothing*f\n\x05Moves\x12\x07\n\x03Pi0\x10\x00\x12\t\n\x05Pi1_4\x10\x01\x12\t\n\x05Pi1_2\x10\x02\x12\t\n\x05Pi3_4\x10\x03\x12\x06\n\x02Pi\x10\x04\x12\t\n\x05Pi5_4\x10\x05\x12\t\n\x05Pi3_2\x10\x06\x12\t\n\x05Pi7_4\x10\x07\x12\n\n\x06NoMove\x10\x08\x32\xa9\x01\n\x0eSlitherTrainer\x12\'\n\x08NextMove\x12\x0c.MoveRequest\x1a\r.MoveResponse\x12&\n\x08Remember\x12\x10.RememberRequest\x1a\x08.Nothing\x12$\n\nStepUpdate\x12\x0c.StepRequest\x1a\x08.Nothing\x12 \n\x05Reset\x12\r.ResetRequest\x1a\x08.NothingB\x10\xaa\x02\rSlither.Protob\x06proto3'
 )
 
 _MOVES = _descriptor.EnumDescriptor(
@@ -78,8 +78,8 @@ _MOVES = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=340,
-  serialized_end=442,
+  serialized_start=354,
+  serialized_end=456,
 )
 _sym_db.RegisterEnumDescriptor(_MOVES)
 
@@ -217,6 +217,13 @@ _REMEMBERREQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='Guid', full_name='RememberRequest.Guid', index=6,
+      number=7, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -230,7 +237,7 @@ _REMEMBERREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=105,
-  serialized_end=235,
+  serialized_end=249,
 )
 
 
@@ -261,8 +268,8 @@ _STEPREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=237,
-  serialized_end=269,
+  serialized_start=251,
+  serialized_end=283,
 )
 
 
@@ -307,8 +314,8 @@ _RESETREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=271,
-  serialized_end=327,
+  serialized_start=285,
+  serialized_end=341,
 )
 
 
@@ -332,8 +339,8 @@ _NOTHING = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=329,
-  serialized_end=338,
+  serialized_start=343,
+  serialized_end=352,
 )
 
 _MOVERESPONSE.fields_by_name['Action'].enum_type = _MOVES
@@ -399,8 +406,8 @@ _SLITHERTRAINER = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=445,
-  serialized_end=614,
+  serialized_start=459,
+  serialized_end=628,
   methods=[
   _descriptor.MethodDescriptor(
     name='NextMove',

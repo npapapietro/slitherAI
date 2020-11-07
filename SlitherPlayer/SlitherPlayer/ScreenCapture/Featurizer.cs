@@ -4,6 +4,7 @@ using OpenQA.Selenium;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using SlitherPlayer.Logger;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -26,9 +27,9 @@ namespace SlitherPlayer.ScreenCapture
             session.Dispose();
         }
 
-        public float[] GetImageFeatures(byte[] stream)
-        {
-            var input = PreProcess(stream);
+        public float[] GetImageFeatures(byte[] stream, Guid id)
+        {   
+            var input = PreProcess(stream, id);
 
             var inputs = new List<NamedOnnxValue>
             {
@@ -39,14 +40,15 @@ namespace SlitherPlayer.ScreenCapture
             return results.First().AsTensor<float>().ToArray();
         }
 
-        private Tensor<float> PreProcess(ReadOnlySpan<byte> stream)
+
+        private Tensor<float> PreProcess(ReadOnlySpan<byte> stream, Guid id)
         {
             using Image<Rgb24> image = Image.Load(stream, out var format).CloneAs<Rgb24>();
             var paddedHeight = 299;
             var paddedWidth = 299;
 
             image.Mutate(x => x.Resize(paddedHeight, paddedWidth));
-
+            PlayerLogger.LogImage(id, image.Clone());
             Tensor<float> input = new DenseTensor<float>(new[] { 1, 3, paddedHeight, paddedWidth });
 
             var mean = new[] { 102.9801f, 115.9465f, 122.7717f };

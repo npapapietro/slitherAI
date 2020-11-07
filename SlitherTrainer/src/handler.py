@@ -30,6 +30,7 @@ class Service(SlitherTrainerServicer):
 
     def Remember(self, request: RememberRequest, context: ServicerContext) -> Nothing:
         self.trainer.remember(
+            request.Guid,
             request.CurrentImage, 
             request.NextImage,
             request.Action,

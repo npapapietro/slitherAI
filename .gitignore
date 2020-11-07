@@ -502,3 +502,4 @@ cython_debug/
 
 *.onnx
 .vscode/
+*.h5

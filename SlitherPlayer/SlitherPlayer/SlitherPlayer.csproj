@@ -29,5 +29,7 @@
     <Content Include="Runtime.cs" />
     <Content Include="ScreenCapture\ScreenCapture.cs" />
     <Content Include="ScreenCapture\ScreenCaptureWindows.cs" />
+    <Content Include="Logger\PlayerLogger.cs" />
+    <Content Include="ScreenCapture\Featurizer.cs" />
   </ItemGroup>
 </Project>

@@ -38,6 +38,7 @@ message RememberRequest {
     float Reward = 4;
     bool DidBoost = 5;
     bool Died = 6;
+    string Guid = 7;
 }
 
 // Communicates to take a step to the Trainer

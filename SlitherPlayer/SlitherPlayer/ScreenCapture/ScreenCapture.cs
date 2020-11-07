@@ -17,6 +17,8 @@ namespace SlitherPlayer.ScreenCapture
             public int Epoch { get; set; }
 
             public byte[] RawData { get; set; }
+
+            public Guid Id {get; set;}
         }
 
         private bool KillSignal;
@@ -37,12 +39,12 @@ namespace SlitherPlayer.ScreenCapture
 
         public ScreenCapture(IWebDriver driver)
         {
-            featurizer = new Featurizer(RuntimeConfigurations.ModelFile);
+            featurizer = new Featurizer(Configurations.ModelFile);
             ImageThreads = new List<Thread>();
             ScreenShots = new List<IScreenSample>();
             KillSignal = false;
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !Configurations.UseSeleniumScreenShot)
             {
                 handler = new ScreenCaptureWindows();
             }
@@ -62,20 +64,20 @@ namespace SlitherPlayer.ScreenCapture
             }
         }
 
-        public float[] ClosestScreen(int epoch)
+        public (float[], Guid)  ClosestScreen(int epoch)
         {
             if (ScreenShots.Count == 0)
             {
-                return null;
+                return (null, new Guid());
             }            
             
             lock(this.ScreenShots){
                 var closest = ScreenShots
-                .Select(x => new { x.RawData, diff = Math.Abs(epoch - x.Epoch), x.Epoch })
+                .Select(x => new { x.RawData, diff = Math.Abs(epoch - x.Epoch), x.Epoch , x.Id})
                 .Aggregate(
-                    (x, y) => x.diff < y.diff ? x : y).RawData;
+                    (x, y) => x.diff < y.diff ? x : y);
 
-                return featurizer.GetImageFeatures(closest);
+                return (featurizer.GetImageFeatures(closest.RawData, closest.Id), closest.Id);
             }
             
             
@@ -102,6 +104,7 @@ namespace SlitherPlayer.ScreenCapture
                             ScreenShots.Add(new ScreenSample
                             {
                                 RawData = bytes,
+                                Id = Guid.NewGuid(),
                             });
                         }
 
