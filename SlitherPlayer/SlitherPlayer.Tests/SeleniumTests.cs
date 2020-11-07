@@ -22,7 +22,6 @@ namespace SlitherPlayer.Tests
 
         public SeleniumTests(ITestOutputHelper o) => output = o;
 
-        [Fact]
         public void TestGrabHtml()
         {
             var driver = new ChromeDriver();
