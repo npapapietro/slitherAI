@@ -56,10 +56,8 @@ namespace SlitherPlayer
                 catch(Exception e)
                 {
                     PlayerLogger.Error("Restarting whole game" + e.Message);
-                }
-                
+                }   
             }
-
         }
 
     }

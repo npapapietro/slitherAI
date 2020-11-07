@@ -186,17 +186,27 @@ namespace SlitherPlayer
 
         float AccessReward(IEnvironmentState currentState, out IEnvironmentState nextState)
         {
-
+            float reward;
             nextState = CurrentState();
 
             if (nextState.Dead)
             {
-                return 0;
+                reward = -1f;
+            }
+            else if (nextState.Length - currentState.Length > 0f)
+            {
+                reward = 1f;
+            }
+            else if (nextState.Length - currentState.Length < 0f)
+            {
+                reward = -0.5f;
+            }
+            else
+            {
+                reward = 0.0f;
             }
 
-            var lengthDiff = nextState.Length - currentState.Length;
-
-            return lengthDiff;
+            return reward;
 
         }
 

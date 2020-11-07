@@ -2,7 +2,7 @@ from logging import FileHandler, Logger
 from os.path import abspath, dirname, isfile, join
 import numpy as np
 import random
-from typing import Tuple, Union
+from typing import Tuple, Union, List
 import pickle
 import h5py
 from tqdm import tqdm
@@ -37,7 +37,7 @@ def chunks(lst, n):
 
 class Trainer:
 
-    def __init__(self):
+    def __init__(self, print_summary=False):
         self.model_path = join(abspath(dirname(__file__)),'..',"..","data")
         self.log_path = join(self.model_path, "logs")
         self.N_moves = len(Moves.values())
@@ -46,7 +46,7 @@ class Trainer:
 
         self._setlogs()
 
-        self._load_models()
+        self._load_models(print_summary)
         self._reset()
 
         self.epsilon = EXPLORATION_MAX
@@ -73,11 +73,21 @@ class Trainer:
         obj._save_model()
 
     @classmethod
-    def train_override(cls, memory: dict):
-        obj = cls()
+    def train_override(cls, memory: List[dict], print_summary=False, **kwargs) -> tf.keras.models.Model:
+        """Trains from import (such as in a jupyter notebook) and returns the trained keras object.
+
+
+        Args:
+            memory (List[dict]): Memory dataset
+            kwargs: keras model kwargs
+
+        Returns:
+            tf.keras.models.Model: fit model
+        """
+        obj = cls(print_summary)
         obj.memory = memory
 
-        mdl = obj._train(ret_mdl=True)
+        mdl = obj._train(ret_mdl=True, **kwargs)
         obj._save_model()
 
         return mdl
@@ -172,7 +182,7 @@ class Trainer:
             self.memory.pop(0)
         
 
-    def _train(self, ret_mdl = False) -> Union[tf.keras.models.Model, None]:
+    def _train(self, ret_mdl = False, **kwargs) -> Union[tf.keras.models.Model, None]:
         """Implementation of the training loop. Takes in self.memory
         and reshapes it accordingly for training.
 
@@ -231,7 +241,8 @@ class Trainer:
         fit = self.model.fit(
             X, y,
             batch_size=BATCH_SIZE,
-            verbose=0
+            verbose=0,
+            **kwargs
         )
 
         if ret_mdl:
@@ -265,9 +276,9 @@ class Trainer:
     def _save_model(self):
         self.model.save_weights(self._weight_path)
 
-    def _load_models(self):
+    def _load_models(self, print_summary=False):
         self.model = FFN(input_shape=(
-            FEATURE_SIZE,), moves=self.N_moves)
+            FEATURE_SIZE,), moves=self.N_moves, summary=print_summary)
 
         if isfile(self._weight_path):
             self.model.load_weights(self._weight_path)

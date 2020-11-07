@@ -22,10 +22,8 @@ def export():
 def FFN(input_shape, moves, summary=False):
 
     input = Input(shape=input_shape)
-    x = Dense(512, activation='relu')(input)
-    x = Dropout(0.15)(x)
-    x = Dense(1024*2, activation='relu')(x)
-    x = Dropout(0.15)(x)
+    x = Dense(1024, activation='relu')(input)
+    # x = Dropout(0.15)(x)
     x = Dense(256*4, activation='relu')(x)
     out_move = Dense(moves, name="move")(x) # Movement direction
     is_boost = Dense(2, name="boost")(x) # Is boosting
@@ -34,6 +32,6 @@ def FFN(input_shape, moves, summary=False):
     model.compile(loss="mean_squared_error", metrics=["accuracy"])
 
     if summary:
-        model.summary()
+        print(model.summary())
     
     return model
