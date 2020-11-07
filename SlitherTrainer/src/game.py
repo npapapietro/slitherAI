@@ -2,10 +2,11 @@ from logging import FileHandler, Logger
 from os.path import abspath, dirname, isfile, join
 import numpy as np
 import random
-from typing import Tuple
+from typing import Tuple, Union
 import pickle
 import h5py
 from tqdm import tqdm
+import tensorflow as tf
 
 from .models import FFN
 from .proto import Moves
@@ -70,6 +71,16 @@ class Trainer:
         
         obj._train()
         obj._save_model()
+
+    @classmethod
+    def train_override(cls, memory: dict):
+        obj = cls()
+        obj.memory = memory
+
+        mdl = obj._train(ret_mdl=True)
+        obj._save_model()
+
+        return mdl
 
     def move(self, state: np.array) -> Tuple[int, bool]:
         """State comes in and based on it and previous 9 states,
@@ -161,7 +172,16 @@ class Trainer:
             self.memory.pop(0)
         
 
-    def _train(self):
+    def _train(self, ret_mdl = False) -> Union[tf.keras.models.Model, None]:
+        """Implementation of the training loop. Takes in self.memory
+        and reshapes it accordingly for training.
+
+        Args:
+            ret_mdl (bool, optional): For use when module is imported, returns the fit keras Model object. Defaults to False.
+
+        Returns:
+            Union[tf.keras.models.Model, None]: If `ret_mdl` flag is true, then returns the keras Model otherwise a void function.
+        """
         batch = random.sample(self.memory, BATCH_SIZE)
         if len(batch) < BATCH_SIZE:
             return
@@ -213,6 +233,10 @@ class Trainer:
             batch_size=BATCH_SIZE,
             verbose=0
         )
+
+        if ret_mdl:
+            return fit
+
         loss = fit.history["loss"][0]
         macc = fit.history["move_accuracy"][0]
         bacc = fit.history["boost_accuracy"][0]

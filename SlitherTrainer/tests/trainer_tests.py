@@ -54,7 +54,7 @@ class TrainerTests(unittest.TestCase):
         trainer = g.Trainer()
         
         for i in range(65):
-            trainer.remember(np.random.rand(1,2048), np.random.rand(1,2048), i, i, i, False, False)
+            trainer.remember('123', np.random.rand(1,2048), np.random.rand(1,2048), i, i, i, False)
 
         self.assertTrue(len(trainer.memory) == g.MEMORY_SIZE)
 
