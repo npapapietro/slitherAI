@@ -17,8 +17,8 @@ from .proto import (
 
 
 class Service(SlitherTrainerServicer):
-    def __init__(self):
-        self.trainer = Trainer()
+    def __init__(self, **kwargs):
+        self.trainer = Trainer(**kwargs)
         super().__init__()
         print("Ready")
 

@@ -15,6 +15,7 @@ WINDOW_SIZE = 10  # frame count
 FEATURE_SIZE = 2048
 MEMORY_SIZE = 900000
 BATCH_SIZE = 2048
+TRAIN_SIZE = BATCH_SIZE * 10
 EXPLORATION_MAX = 1.0
 EXPLORATION_MIN = 0.1
 EXPLORATION_TEST = 0.02
@@ -24,7 +25,7 @@ EXPLORATION_DECAY = (EXPLORATION_MAX-EXPLORATION_MIN)/EXPLORATION_STEPS
 
 GAMMA = 0.99
 TRAINING_FREQUENCY = 2048
-TARGET_NETWORK_UPDATE_FREQUENCY = 40000
+TARGET_NETWORK_UPDATE_FREQUENCY = 100
 MODEL_PERSISTENCE_UPDATE_FREQUENCY = 10000
 REPLAY_START_SIZE = 50000
 
@@ -37,8 +38,8 @@ def chunks(lst, n):
 
 class Trainer:
 
-    def __init__(self, print_summary=False):
-        self.model_path = join(abspath(dirname(__file__)),'..',"..","data")
+    def __init__(self, print_summary=False, reload_memory=False, **kwargs):
+        self.model_path = join(abspath(dirname(__file__)), '..', "..", "data")
         self.log_path = join(self.model_path, "logs")
         self.N_moves = len(Moves.values())
         self._weight_path = join(self.model_path, 'weights.h5')
@@ -50,25 +51,25 @@ class Trainer:
         self._reset()
 
         self.epsilon = EXPLORATION_MAX
-        self.memory = []
-    
+        self.memory = self._reload_memory() if reload_memory else []
+
     @classmethod
     def train(cls):
         obj = cls()
-        
-        with h5py.File(obj.log_path + '/preprocessed.h5','r') as hf:
+
+        with h5py.File(obj.log_path + '/preprocessed.h5', 'r') as hf:
             nextImages = hf['nextImage'][...]
             currentImages = hf['currentImage'][...]
             metadata = hf['metadata'][...]
 
-        obj.memory= [{ 
+        obj.memory = [{
             "currentImage": ci,
             "nextImage": ni,
             "action": int(md[0]),
             "reward": md[1],
             "died": int(md[2]),
             "didBoost": int(md[3])} for ni, ci, md in zip(nextImages, currentImages, metadata)]
-        
+
         obj._train()
         obj._save_model()
 
@@ -131,6 +132,10 @@ class Trainer:
         it looks to make update, train, reset decisions based on
         preconfigured options
         """
+
+        if len(self.memory) > REPLAY_START_SIZE:
+            total_step += REPLAY_START_SIZE
+
         if total_step < REPLAY_START_SIZE:
             return
 
@@ -171,7 +176,7 @@ class Trainer:
         }
 
         self.memory.append(record)
-        
+
         try:
             with open(self.datafile, 'ab') as f:
                 pickle.dump(record, f)
@@ -180,9 +185,8 @@ class Trainer:
 
         if len(self.memory) > MEMORY_SIZE:
             self.memory.pop(0)
-        
 
-    def _train(self, ret_mdl = False, **kwargs) -> Union[tf.keras.models.Model, None]:
+    def _train(self, ret_mdl=False, **kwargs) -> Union[tf.keras.models.Model, None]:
         """Implementation of the training loop. Takes in self.memory
         and reshapes it accordingly for training.
 
@@ -192,7 +196,7 @@ class Trainer:
         Returns:
             Union[tf.keras.models.Model, None]: If `ret_mdl` flag is true, then returns the keras Model otherwise a void function.
         """
-        batch = random.sample(self.memory, BATCH_SIZE)
+        batch = random.sample(self.memory, TRAIN_SIZE)
         if len(batch) < BATCH_SIZE:
             return
 
@@ -236,12 +240,11 @@ class Trainer:
 
         X = np.array(current_states).squeeze()
         y = [np.array(q_values).squeeze(), np.array(
-            max_boost_q_values).squeeze()]
+            boost_q_values).squeeze()]
 
         fit = self.model.fit(
             X, y,
             batch_size=BATCH_SIZE,
-            verbose=0,
             **kwargs
         )
 
@@ -260,7 +263,7 @@ class Trainer:
         self.logger = Logger("TrainerLogs")
         try:
             self.logger.addHandler(FileHandler(
-                join(self.log_path, "trainer.log")))            
+                join(self.log_path, "trainer.log")))
         except FileNotFoundError:
             # probably here from unit tests
             pass
@@ -284,6 +287,24 @@ class Trainer:
             self.model.load_weights(self._weight_path)
             self.logger.info("Weights loaded")
 
-
         self.model_target = FFN(input_shape=(
             FEATURE_SIZE,), moves=self.N_moves)
+
+    def _reload_memory(self):
+
+        with h5py.File(join(self.log_path,'preprocessed_sm.h5'), 'r') as hf:
+            nextImages = hf['nextImage'][...]
+            currentImages = hf['currentImage'][...]
+            metadata = hf['metadata'][...]
+            ids = hf['ids'][...]
+
+        init_memory =  [{
+            "currentImage": ci,
+            "nextImage": ni,
+            "action": int(md[0]),
+            "reward": md[1],
+            "died": int(md[2]),
+            "didBoost": int(md[3]),
+            "id": i.decode()} for ni, ci, md, i in zip(nextImages, currentImages, metadata, ids)][:MEMORY_SIZE]
+        print("Loading trainer with", len(init_memory), 'memories')
+        return init_memory

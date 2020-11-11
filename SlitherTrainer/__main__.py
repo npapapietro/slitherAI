@@ -8,6 +8,7 @@ parser.add_argument("--rebuild", action="store_true", help="Rebuilds the python 
 parser.add_argument("--server", action="store_true", help="Starts the grpc server")
 parser.add_argument("--export", action="store_true", help="Exports the CNN image featurizer")
 parser.add_argument("--train", action="store_true")
+parser.add_argument("--reload-memory", action="store_true")
 
 def update_protos():
     from grpc_tools import protoc
@@ -46,9 +47,9 @@ def update_protos():
             file.write(re.sub(r'\n(import .+_pb2.*)', 'from . \\1', code))
             file.truncate()
 
-def run_server():
+def run_server(**trainer_args):
     from .src import serve
-    serve()
+    serve(**trainer_args)
 
 def run_export():
     from .src import export
@@ -77,7 +78,7 @@ if __name__ == "__main__":
         update_protos()
 
     elif args.server:
-        run_server()
+        run_server(reload_memory=args.reload_memory)
 
     elif args.export:
         run_export()
