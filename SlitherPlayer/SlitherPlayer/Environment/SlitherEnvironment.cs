@@ -1,13 +1,14 @@
 using OpenQA.Selenium;
+using SlitherPlayer.Logger;
 using SlitherPlayer.ScreenCapture;
 using System;
 using System.Threading;
 
 namespace SlitherPlayer.Environment
 {
-    public class SlitherEnvironment: IEnvironment
+    public class SlitherEnvironment : IEnvironment
     {
-        private class EnvironmentState: IEnvironmentState
+        private class EnvironmentState : IEnvironmentState
         {
             public float[] ScreenState { get; set; }
 
@@ -17,7 +18,7 @@ namespace SlitherPlayer.Environment
 
             public int TimeStamp { get; set; }
 
-            public Guid Id {get; set;}
+            public Guid Id { get; set; }
 
         }
 
@@ -26,7 +27,7 @@ namespace SlitherPlayer.Environment
 
             Thread.Sleep(withWait ? 1000 : 0);
 
-            
+
             if (!GetSlitherLength(driver, out var length))
             {
                 length = 10;
@@ -35,10 +36,10 @@ namespace SlitherPlayer.Environment
             var playbuttonDisplayed = GetPlayButton(driver, out var playbutton) && (playbutton?.Displayed ?? false);
 
             var TimeStamp = DateTime.UtcNow.ToEpoch();
-            
+
             var (screen, id) = stream.ClosestScreen(TimeStamp);
 
-            return new EnvironmentState
+            var state = new EnvironmentState
             {
                 TimeStamp = TimeStamp,
                 Length = length,
@@ -46,6 +47,16 @@ namespace SlitherPlayer.Environment
                 ScreenState = screen,
                 Id = id
             };
+
+
+            PlayerLogger.Info(new
+            {
+                Timestep = state.TimeStamp,
+                Length = state.Length,
+                Dead = state.Dead,
+                Id = id
+            });
+            return state;
 
         }
 

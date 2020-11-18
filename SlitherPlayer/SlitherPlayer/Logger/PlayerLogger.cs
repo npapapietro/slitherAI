@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using SixLabors.ImageSharp;
 
 namespace SlitherPlayer.Logger
@@ -44,16 +45,21 @@ namespace SlitherPlayer.Logger
             }
         }
 
-        public static void Debug(string msg) => Log(msg, LogLevel.Debug);
-        public static void Info(string msg) => Log(msg, LogLevel.Info);
-        public static void Warn(string msg) => Log(msg, LogLevel.Warn);
-        public static void HandledError(string msg) => Log(msg, LogLevel.HandledError);
-        public static void Error(string msg) => Log(msg, LogLevel.Error);
+        public static void Debug<T>(T msg) => Log(msg, LogLevel.Debug);
+        public static void Info<T>(T msg) => Log(msg, LogLevel.Info);
+        public static void Warn<T>(T msg) => Log(msg, LogLevel.Warn);
+        public static void HandledError<T>(T msg) => Log(msg, LogLevel.HandledError);
+        public static void Error<T>(T msg) => Log(msg, LogLevel.Error);
 
-        public static void Log(string message, LogLevel level)
+        public static void Log<T>(T message, LogLevel level)
         {
+            var logmssage = new {
+                LevelName = level,
+                UTCNow = DateTime.UtcNow.ToEpoch(),
+                message = message
+            };
+            var msg = JsonConvert.SerializeObject(logmssage);
             using StreamWriter streamWriter = new StreamWriter(LogFile, true);            
-            var msg = $"{nameof(level)} {DateTime.UtcNow.ToEpoch()}: {message}";
 
             if(WriteLine && level > VerboseLevel) Console.WriteLine(msg);
 
