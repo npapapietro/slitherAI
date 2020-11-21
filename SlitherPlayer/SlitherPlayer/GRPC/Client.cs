@@ -36,7 +36,7 @@ namespace SlitherPlayer.GRPC
             {
                 Action = nextMove.Action,
                 Reward = reward,
-                Died = reward < 0.0,
+                Died = nextState.Dead,
                 DidBoost = nextMove.Boost,
                 Guid = currentState.Id.ToString()
             };
