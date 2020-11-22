@@ -6,13 +6,13 @@ from src.game import Trainer, BATCH_SIZE, WINDOW_SIZE
 
 
 class TrainerTests(unittest.TestCase):
-    
+
     def test_ctor(self):
         try:
             Trainer()
         except Exception as e:
             self.assertTrue(False)
-    
+
     def test_move_rando(self):
         trainer = Trainer()
         trainer.memory = []
@@ -26,7 +26,7 @@ class TrainerTests(unittest.TestCase):
 
     def test_move_memory(self):
         trainer = Trainer()
-  
+
 
         fake_state = np.random.rand(2048)
 
@@ -52,7 +52,7 @@ class TrainerTests(unittest.TestCase):
         import src.game as g
         g.MEMORY_SIZE = 50
         trainer = g.Trainer()
-        
+
         for i in range(65):
             trainer.remember('123', np.random.rand(1,2048), np.random.rand(1,2048), i, i, i, False)
 
@@ -62,7 +62,7 @@ class TrainerTests(unittest.TestCase):
         import src.game as g
         g.BATCH_SIZE = 16
         trainer = g.Trainer()
-        for _ in range(g.BATCH_SIZE):
+        for _ in range(g.BATCH_SIZE*10):
             trainer.memory.append({
                 'currentImage': np.random.rand(2048),
                 'nextImage': np.random.rand(2048),
@@ -77,4 +77,3 @@ class TrainerTests(unittest.TestCase):
             print(e)
             self.assertTrue(False)
 
-    
